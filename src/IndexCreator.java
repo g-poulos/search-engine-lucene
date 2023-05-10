@@ -3,11 +3,15 @@ package src;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -79,19 +83,13 @@ public class IndexCreator {
         w.addDocument(doc);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ParseException {
         IndexCreator idxCreator = new IndexCreator();
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
         ArrayList<String[]> textList = idxCreator.readData("spotify_millsongdata_cl.csv");
         idxCreator.createIndex(textList, analyzer);
 
-//        for (String[] i: textList) {
-//            System.out.println(i[0]);
-//            System.out.println(i[1]);
-//            System.out.println(i[2]);
-//            System.out.println("--------------------");
-//        }
     }
 
 }

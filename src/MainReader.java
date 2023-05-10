@@ -14,9 +14,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 public class MainReader {
     private ArrayList<Document> foundDocuments;
+    private List<List<Document>> documentPages = new ArrayList<>();
 
 
     public void runQuery(String queryStr, String field) throws IOException, ParseException {
@@ -41,10 +45,26 @@ public class MainReader {
             Document d = searcher.doc(docId);
             foundDocuments.add(d);
         }
+
         System.out.println("Found " + hits.length + " hits.");
+
+        ArrayList<Document> page = new ArrayList<>();
+        int batch = 0;
+        for (Document doc: foundDocuments) {
+            if (batch == 10) {
+                documentPages.add(page);
+                page = new ArrayList<>(Arrays.asList(doc));
+                batch = 1;
+            }else {
+                page.add(doc);
+                batch = batch + 1;
+            }
+        }
+        documentPages.add(page);
     }
 
     public ArrayList<Document> getFoundDocuments() {
         return foundDocuments;
     }
 }
+

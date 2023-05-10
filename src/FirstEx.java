@@ -1,23 +1,24 @@
 package src;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.TilePane;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
 import java.io.IOException;
-import java.util.ArrayList;
+
 
 public class FirstEx extends Application {
 
@@ -29,27 +30,39 @@ public class FirstEx extends Application {
 
     private void initUI(Stage stage) {
 
-        var root = new TilePane();
+        Text text = new Text();
+        text.setFont(new Font(13));
+        text.setTextAlignment(TextAlignment.CENTER);
+        final String[] variableText = {""};
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(text);
+
+        var root = new VBox();
+        root.setSpacing(10);
+        root.setPadding(new Insets(30));
+        root.setAlignment(Pos.CENTER);
+
         var scene = new Scene(root, 600, 500);
-        var lbl = new Label("Simple JavaFX application.\n");
+        var lbl = new Label("Lucene Search Engine\n");
+        lbl.setAlignment(Pos.CENTER);
+
+
         MainReader reader = new MainReader();
 
-        lbl.setFont(Font.font("Serif", FontWeight.BOLD, 20));
+        lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
 
         TextField b = new TextField();
-        Label l = new Label("no text");
         Button button = new Button();
         button.setText("Next");
-        button.setTranslateX(150);
-        button.setTranslateY(60);
+
 
         final int[] count = {10};
 
         EventHandler<ActionEvent> event = new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e)
             {
-                l.setText(b.getText());
                 String input = b.getText();
 
                 try {
@@ -60,11 +73,16 @@ public class FirstEx extends Application {
                         documentsNum = reader.getFoundDocuments().size();
                     }
 
+
                     for(int i=0; i<documentsNum; ++i) {
-                        System.out.printf("%3d. %20s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
+                        System.out.printf("%3d. %30s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
                                                                         reader.getFoundDocuments().get(i).get("song"));
+                        variableText[0] = variableText[0] + reader.getFoundDocuments().get(i).get("artist") + " - " + reader.getFoundDocuments().get(i).get("song") + "\n\n";
+
                     }
                     count[0] = 10;
+
+                    text.setText(variableText[0]);
 
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -84,26 +102,21 @@ public class FirstEx extends Application {
                 }
 
                 for (int i = count[0]; i < documentsNum; ++i) {
-                    System.out.printf("%3d. %20s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
+                    System.out.printf("%3d. %30s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
                             reader.getFoundDocuments().get(i).get("song"));
                 }
                 count[0] = count[0] + 10;
 
+                if (count[0] > documentsNum) {
+                    System.out.println("END");
+                }
             }
         };
-
 
         button.setOnAction(buttonNext);
         b.setOnAction(event);
 
-        lbl.setStyle("-fx-alignment: center ");
-
-        root.getChildren().add(lbl);
-        root.getChildren().add(b);
-        root.getChildren().add(l);
-        root.getChildren().add(button);
-
-
+        root.getChildren().addAll(lbl, b, button, scrollPane);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
         stage.show();

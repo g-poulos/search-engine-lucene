@@ -10,24 +10,24 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
-public class IndexReader {
+public class MainReader {
+    private ArrayList<Document> foundDocuments;
 
 
-    public static void main(String[] args) throws IOException, ParseException {
+    public void runQuery(String queryStr, String field) throws IOException, ParseException {
+        foundDocuments = new ArrayList<>();
+
         Path path = Paths.get(System.getProperty("user.dir") + "/index");
         FSDirectory index = FSDirectory.open(path);
 
 
         StandardAnalyzer analyzer = new StandardAnalyzer();
-
-        String queryStr = args.length > 0 ? args[0] : "come in";
-        Query query = new QueryParser("song", analyzer).parse(queryStr);
-
+        Query query = new QueryParser(field, analyzer).parse(queryStr);
 
         int hitsPerPage = 100;
         org.apache.lucene.index.IndexReader reader = DirectoryReader.open(index);
@@ -36,12 +36,15 @@ public class IndexReader {
         ScoreDoc[] hits = docs.scoreDocs;
 
 
-
         for(int i=0;i<hits.length;++i) {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
-            System.out.println((i + 1) + ". " + d.get("artist") + " -- " + d.get("song"));
+            foundDocuments.add(d);
         }
         System.out.println("Found " + hits.length + " hits.");
+    }
+
+    public ArrayList<Document> getFoundDocuments() {
+        return foundDocuments;
     }
 }

@@ -48,9 +48,23 @@ public class FirstEx extends Application {
         lbl.setAlignment(Pos.CENTER);
         lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
+        var chooseFieldText = new Label("Search Field:");
+        chooseFieldText.setFont(new Font(14));
+        ToggleGroup toggleGroup = new ToggleGroup();
+        RadioButton radioButton1 = new RadioButton("Artist");
+        RadioButton radioButton2 = new RadioButton("Song");
+        RadioButton radioButton3 = new RadioButton("Lyrics");
+
+        radioButton1.setToggleGroup(toggleGroup);
+        radioButton2.setToggleGroup(toggleGroup);
+        radioButton3.setToggleGroup(toggleGroup);
+
+        var radioButtons = new HBox(chooseFieldText, radioButton1, radioButton2, radioButton3);
+        radioButtons.setAlignment(Pos.CENTER);
+        radioButtons.setSpacing(10);
+
 
         MainReader reader = new MainReader();
-
 
         TextField b = new TextField();
         Button nextButton = new Button();
@@ -70,7 +84,7 @@ public class FirstEx extends Application {
         prevButton.setOnAction(buttonPrev);
         b.setOnAction(event);
 
-        root.getChildren().addAll(lbl, b, buttons, scrollPane);
+        root.getChildren().addAll(lbl, b, radioButtons, buttons, scrollPane);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
         stage.show();

@@ -14,14 +14,14 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
-
-import javax.swing.text.Document;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 
 public class FirstEx extends Application {
+    int pageNumber = 0;
 
     @Override
     public void start(Stage stage) {
@@ -33,12 +33,10 @@ public class FirstEx extends Application {
 
         Text text = new Text();
         text.setFont(new Font(13));
-        text.setTextAlignment(TextAlignment.CENTER);
-        final String[] variableText = {""};
+        text.setTextAlignment(TextAlignment.LEFT);
 
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setContent(text);
-
 
         var root = new VBox();
         root.setSpacing(10);
@@ -57,26 +55,19 @@ public class FirstEx extends Application {
         TextField b = new TextField();
         Button nextButton = new Button();
         nextButton.setText("Next");
+
         Button prevButton = new Button();
         prevButton.setText("Previous");
 
         var buttons = new HBox(prevButton, nextButton);
         buttons.setAlignment(Pos.CENTER);
 
-
-        final int[] count = {10};
-
-        int pageNumber = 0;
-
-        EventHandler<ActionEvent> event = e -> {
-            search_query(text, variableText, reader, b, count);
-        };
-
-        EventHandler<ActionEvent> buttonNext = e -> {
-            show_next(text, variableText, reader, count);
-        };
+        EventHandler<ActionEvent> event = e -> this.search_query(text, reader, b);
+        EventHandler<ActionEvent> buttonNext = e -> this.show_next(text, reader);
+        EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(text, reader);
 
         nextButton.setOnAction(buttonNext);
+        prevButton.setOnAction(buttonPrev);
         b.setOnAction(event);
 
         root.getChildren().addAll(lbl, b, buttons, scrollPane);
@@ -85,26 +76,12 @@ public class FirstEx extends Application {
         stage.show();
     }
 
-    private static void search_query(Text text, String[] variableText, MainReader reader, TextField b, int[] count) {
+    private void search_query(Text text, MainReader reader, TextField b) {
         String input = b.getText();
 
         try {
             reader.runQuery(input, "song");
-            int documentsNum = 10;
-
-            if (reader.getFoundDocuments().size() < 10) {
-                documentsNum = reader.getFoundDocuments().size();
-            }
-
-            for(int i=0; i<documentsNum; ++i) {
-                System.out.printf("%3d. %30s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
-                                                                reader.getFoundDocuments().get(i).get("song"));
-                variableText[0] = variableText[0] + reader.getFoundDocuments().get(i).get("artist") + " - " +
-                                                    reader.getFoundDocuments().get(i).get("song") + "\n\n";
-
-            }
-            count[0] = 10;
-            text.setText(variableText[0]);
+            this.showPage(reader.getDocumentPages().get(pageNumber), text);
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -113,38 +90,27 @@ public class FirstEx extends Application {
         }
     }
 
-    private static void show_next(Text text, String[] variableText, MainReader reader, int[] count) {
-        variableText[0] = "";
-        int documentsNum = count[0] + 10;
+    private void show_next(Text text, MainReader reader) {
+        if (pageNumber < reader.getDocumentPages().size()-1)
+            pageNumber = pageNumber + 1;
+        this.showPage(reader.getDocumentPages().get(pageNumber), text);
 
-        if (documentsNum > reader.getFoundDocuments().size()) {
-            documentsNum =  reader.getFoundDocuments().size();
-        }
-
-        for (int i = count[0]; i < documentsNum; ++i) {
-            System.out.printf("%3d. %30s - %s\n", (i + 1), reader.getFoundDocuments().get(i).get("artist"),
-                    reader.getFoundDocuments().get(i).get("song"));
-            variableText[0] = variableText[0] + reader.getFoundDocuments().get(i).get("artist") + " - " +
-                                                reader.getFoundDocuments().get(i).get("song") + "\n\n";
-        }
-        count[0] = count[0] + 10;
-        text.setText(variableText[0]);
-
-        if (count[0] > documentsNum) {
-            System.out.println("END");
-        }
     }
 
+    private void show_prev(Text text, MainReader reader) {
+        if (pageNumber > 1)
+            pageNumber = pageNumber - 1;
+        this.showPage(reader.getDocumentPages().get(pageNumber), text);
 
-    private void showPage(int pageNumber, ArrayList<Document> page) {
+    }
+
+    private void showPage(List<Document> page, Text text) {
         String pageString = "";
-
         for (int i = 0; i < page.size(); ++i) {
             System.out.printf("%3d. %30s - %s\n", (i + 1), page.get(i).get("artist"), page.get(i).get("song"));
-            pageString = pageString + page.get(i).get("artist") + " - " + page.get(i).get("song");
+            pageString = pageString + page.get(i).get("artist") + " - " + page.get(i).get("song") + "\n";
         }
-        text.setText(variableText[0]);
-
+        text.setText(pageString);
     }
 
     public static void main(String[] args) {

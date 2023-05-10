@@ -66,5 +66,9 @@ public class MainReader {
     public ArrayList<Document> getFoundDocuments() {
         return foundDocuments;
     }
+
+    public List<List<Document>> getDocumentPages() {
+        return documentPages;
+    }
 }
 

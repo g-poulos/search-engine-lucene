@@ -25,6 +25,7 @@ public class MainReader {
 
     public void runQuery(String queryStr, String field) throws IOException, ParseException {
         foundDocuments = new ArrayList<>();
+        documentPages = new ArrayList<>();
 
         Path path = Paths.get(System.getProperty("user.dir") + "/index");
         FSDirectory index = FSDirectory.open(path);

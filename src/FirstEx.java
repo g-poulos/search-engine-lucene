@@ -1,7 +1,6 @@
 package src;
 
 import javafx.application.Application;
-import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -19,19 +18,14 @@ import javafx.stage.Stage;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
 
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.AutoCompletionBinding.AutoCompletionEvent;
-import static org.controlsfx.control.textfield.TextFields.bindAutoCompletion;
 
 public class FirstEx extends Application {
     int pageNumber = 0;
     List<String> suggestions = new ArrayList<>();
+    private String searchField = "song";
 
     @Override
     public void start(Stage stage) {
@@ -74,13 +68,13 @@ public class FirstEx extends Application {
         var buttons = new HBox(prevButton, nextButton);
         buttons.setAlignment(Pos.CENTER);
 
-        EventHandler<ActionEvent> event = e -> this.search_query(outputList, reader, searchField);
+        EventHandler<ActionEvent> search = e -> this.search_query(outputList, reader, searchField);
         EventHandler<ActionEvent> buttonNext = e -> this.show_next(outputList, reader);
         EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(outputList, reader);
 
         nextButton.setOnAction(buttonNext);
         prevButton.setOnAction(buttonPrev);
-        searchField.setOnAction(event);
+        searchField.setOnAction(search);
 
         root.getChildren().addAll(lbl, searchField, suggestionsListView, radioButtons, buttons, scrollPane);
         stage.setTitle("Lucene Search Engine");
@@ -115,7 +109,7 @@ public class FirstEx extends Application {
         return suggestionsListView;
     }
 
-    private static HBox getRadioButtonOptions() {
+    private HBox getRadioButtonOptions() {
         var chooseFieldText = new Label("Search Field:");
         chooseFieldText.setFont(new Font(14));
         ToggleGroup toggleGroup = new ToggleGroup();
@@ -127,6 +121,13 @@ public class FirstEx extends Application {
         radioButton2.setToggleGroup(toggleGroup);
         radioButton3.setToggleGroup(toggleGroup);
 
+        EventHandler<ActionEvent> setToArtist = e -> this.setSearchField("artist");
+        EventHandler<ActionEvent> setToSong = e -> this.setSearchField("song");
+        EventHandler<ActionEvent> setToLyrics = e -> this.setSearchField("text");
+        radioButton1.setOnAction(setToArtist);
+        radioButton2.setOnAction(setToSong);
+        radioButton3.setOnAction(setToLyrics);
+
         var radioButtons = new HBox(chooseFieldText, radioButton1, radioButton2, radioButton3);
         radioButtons.setAlignment(Pos.CENTER);
         radioButtons.setSpacing(10);
@@ -135,9 +136,10 @@ public class FirstEx extends Application {
 
     private void search_query(Text text, MainReader reader, TextField b) {
         String input = b.getText();
+        System.out.println("Search Field: " + this.searchField);
 
         try {
-            reader.runQuery(input, "song");
+            reader.runQuery(input, this.searchField);
             this.showPage(reader.getDocumentPages().get(pageNumber), text);
 
             if (suggestions.contains(input)) {
@@ -175,16 +177,11 @@ public class FirstEx extends Application {
         text.setText(pageString);
     }
 
+    private void setSearchField(String field) {
+        this.searchField = field;
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 }
-
-
-//        AutoCompletionBinding<String> binder = bindAutoCompletion(b, suggestions);
-//
-//        // Handle the selection event
-//        binder.setOnAutoCompleted((AutoCompletionEvent<String> event) -> {
-//            String selectedSuggestion = event.getCompletion();
-//            System.out.println("Selected suggestion: " + selectedSuggestion);
-//        });

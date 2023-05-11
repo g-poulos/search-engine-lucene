@@ -30,7 +30,6 @@ public class MainReader {
         Path path = Paths.get(System.getProperty("user.dir") + "/index");
         FSDirectory index = FSDirectory.open(path);
 
-
         StandardAnalyzer analyzer = new StandardAnalyzer();
         Query query = new QueryParser(field, analyzer).parse(queryStr);
 
@@ -40,15 +39,13 @@ public class MainReader {
         TopDocs docs = searcher.search(query, hitsPerPage);
         ScoreDoc[] hits = docs.scoreDocs;
 
-
-        for(int i=0;i<hits.length;++i) {
-            int docId = hits[i].doc;
-            Document d = searcher.doc(docId);
-            foundDocuments.add(d);
-        }
-
+        fillFoundDocuments(searcher, hits);
         System.out.println("Found " + hits.length + " hits.");
 
+        createPages();
+    }
+
+    private void createPages() {
         ArrayList<Document> page = new ArrayList<>();
         int batch = 0;
         for (Document doc: foundDocuments) {
@@ -62,6 +59,14 @@ public class MainReader {
             }
         }
         documentPages.add(page);
+    }
+
+    private void fillFoundDocuments(IndexSearcher searcher, ScoreDoc[] hits) throws IOException {
+        for(int i = 0; i< hits.length; ++i) {
+            int docId = hits[i].doc;
+            Document d = searcher.doc(docId);
+            foundDocuments.add(d);
+        }
     }
 
     public ArrayList<Document> getFoundDocuments() {

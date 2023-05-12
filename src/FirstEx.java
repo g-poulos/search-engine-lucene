@@ -10,9 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.*;
-import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -26,7 +24,7 @@ public class FirstEx extends Application {
     int pageNumber = 0;
     List<String> suggestions = new ArrayList<>();
     private String searchField = "song";
-    private TextFlow out = new TextFlow();
+    private Text searchOutput = new Text();
     private TextField searchInput = new TextField();
 
     @Override
@@ -45,7 +43,7 @@ public class FirstEx extends Application {
 //        webView.getEngine().loadContent(htmlContent);
 
         ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setContent(out);
+        scrollPane.setContent(searchOutput);
 
         var root = new VBox();
         root.setSpacing(10);
@@ -61,7 +59,7 @@ public class FirstEx extends Application {
         MainReader reader = new MainReader();
 
 
-        ListView<String> suggestionsListView = getSuggestionsListView(outputList, reader, searchInput);
+        ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
         suggestionsListView.setPrefHeight(100);
 
         Button nextButton = new Button();
@@ -73,9 +71,9 @@ public class FirstEx extends Application {
         var buttons = new HBox(prevButton, nextButton);
         buttons.setAlignment(Pos.CENTER);
 
-        EventHandler<ActionEvent> search = e -> this.search_query(outputList, reader, searchInput);
-        EventHandler<ActionEvent> buttonNext = e -> this.show_next(outputList, reader);
-        EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(outputList, reader);
+        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
+        EventHandler<ActionEvent> buttonNext = e -> this.show_next(reader);
+        EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(reader);
 
         nextButton.setOnAction(buttonNext);
         prevButton.setOnAction(buttonPrev);
@@ -87,7 +85,7 @@ public class FirstEx extends Application {
         stage.show();
     }
 
-    private ListView<String> getSuggestionsListView(Text text, MainReader reader, TextField searchField) {
+    private ListView<String> getSuggestionsListView(MainReader reader, TextField searchField) {
         ListView<String> suggestionsListView = new ListView<>();
 
         // Update suggestions when the text changes
@@ -107,7 +105,7 @@ public class FirstEx extends Application {
             if (selectedSuggestion != null) {
                 searchField.setText(selectedSuggestion);
                 suggestionsListView.getItems().clear();
-                this.search_query(text, reader, searchField);
+                this.search_query(reader, searchField);
 
             }
         });
@@ -139,13 +137,13 @@ public class FirstEx extends Application {
         return radioButtons;
     }
 
-    private void search_query(Text text, MainReader reader, TextField b) {
+    private void search_query(MainReader reader, TextField b) {
         String input = b.getText();
         System.out.println("Search Field: " + this.searchField);
 
         try {
             reader.runQuery(input, this.searchField);
-            this.showPage(reader.getDocumentPages().get(pageNumber), text);
+            this.showPage(reader.getDocumentPages().get(pageNumber));
 
             if (suggestions.contains(input)) {
                 suggestions.remove(input);
@@ -154,48 +152,48 @@ public class FirstEx extends Application {
 
         } catch (IOException ex) {
             ex.printStackTrace();
-        } catch (ParseException ex) {
-            ex.printStackTrace();
         } catch (InvalidTokenOffsetsException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
             e.printStackTrace();
         }
     }
 
-    private void show_next(Text text, MainReader reader) {
+    private void show_next(MainReader reader) {
         if (pageNumber < reader.getDocumentPages().size()-1)
             pageNumber = pageNumber + 1;
-        this.showPage(reader.getDocumentPages().get(pageNumber), text);
+        this.showPage(reader.getDocumentPages().get(pageNumber));
 
     }
 
-    private void show_prev(Text text, MainReader reader) {
+    private void show_prev(MainReader reader) {
         if (pageNumber > 1)
             pageNumber = pageNumber - 1;
-        this.showPage(reader.getDocumentPages().get(pageNumber), text);
+        this.showPage(reader.getDocumentPages().get(pageNumber));
 
     }
 
-    private void showPage(List<Document> page, Text text) {
+    private void showPage(List<Document> page) {
         String pageString = "";
         for (int i = 0; i < page.size(); ++i) {
             System.out.printf("%3d. %30s - %s\n", (i + 1), page.get(i).get("artist"), page.get(i).get("song"));
             pageString = pageString + page.get(i).get("artist") + " - " + page.get(i).get("song") + "\n";
         }
-        text.setText(pageString);
+        searchOutput.setText(pageString);
 
 
-        // Split the text into words
-        String[] words = text.getText().split(" ");
-
-        for (String word : words) {
-            Text wordText = new Text(word + " ");
-
-            if (word.equalsIgnoreCase(searchInput.getText())) {
-                wordText.setFill(Color.RED); // Set the color to red
-            }
-
-            out.getChildren().add(wordText);
-        }
+//        // Split the text into words
+//        String[] words = text.getText().split(" ");
+//
+//        for (String word : words) {
+//            Text wordText = new Text(word + " ");
+//
+//            if (word.equalsIgnoreCase(searchInput.getText())) {
+//                wordText.setFill(Color.RED); // Set the color to red
+//            }
+//
+//            out.getChildren().add(wordText);
+//        }
     }
 
     private void setSearchField(String field) {

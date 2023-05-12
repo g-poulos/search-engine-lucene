@@ -10,13 +10,13 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
+import javafx.scene.paint.Color;
+import javafx.scene.text.*;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.highlight.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +26,8 @@ public class FirstEx extends Application {
     int pageNumber = 0;
     List<String> suggestions = new ArrayList<>();
     private String searchField = "song";
+    private TextFlow out = new TextFlow();
+    private TextField searchInput = new TextField();
 
     @Override
     public void start(Stage stage) {
@@ -34,29 +36,32 @@ public class FirstEx extends Application {
     }
 
     private void initUI(Stage stage) {
-
         Text outputList = new Text();
-        outputList.setFont(new Font(13));
+        outputList.setFont(new Font(15));
         outputList.setTextAlignment(TextAlignment.LEFT);
 
+//        WebView webView = new WebView();
+//        String htmlContent = "<html><body><h1>Hello, World!</h1></body></html>";
+//        webView.getEngine().loadContent(htmlContent);
+
         ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setContent(outputList);
+        scrollPane.setContent(out);
 
         var root = new VBox();
         root.setSpacing(10);
         root.setPadding(new Insets(30));
         root.setAlignment(Pos.CENTER);
 
-        var scene = new Scene(root, 700, 500);
+        var scene = new Scene(root, 800, 600);
         var lbl = new Label("Lucene Search Engine\n");
         lbl.setAlignment(Pos.CENTER);
         lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
         HBox radioButtons = getRadioButtonOptions();
         MainReader reader = new MainReader();
-        TextField searchField = new TextField();
 
-        ListView<String> suggestionsListView = getSuggestionsListView(outputList, reader, searchField);
+
+        ListView<String> suggestionsListView = getSuggestionsListView(outputList, reader, searchInput);
         suggestionsListView.setPrefHeight(100);
 
         Button nextButton = new Button();
@@ -68,15 +73,15 @@ public class FirstEx extends Application {
         var buttons = new HBox(prevButton, nextButton);
         buttons.setAlignment(Pos.CENTER);
 
-        EventHandler<ActionEvent> search = e -> this.search_query(outputList, reader, searchField);
+        EventHandler<ActionEvent> search = e -> this.search_query(outputList, reader, searchInput);
         EventHandler<ActionEvent> buttonNext = e -> this.show_next(outputList, reader);
         EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(outputList, reader);
 
         nextButton.setOnAction(buttonNext);
         prevButton.setOnAction(buttonPrev);
-        searchField.setOnAction(search);
+        searchInput.setOnAction(search);
 
-        root.getChildren().addAll(lbl, searchField, suggestionsListView, radioButtons, buttons, scrollPane);
+        root.getChildren().addAll(lbl, searchInput, suggestionsListView, radioButtons, buttons, scrollPane);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
         stage.show();
@@ -151,6 +156,8 @@ public class FirstEx extends Application {
             ex.printStackTrace();
         } catch (ParseException ex) {
             ex.printStackTrace();
+        } catch (InvalidTokenOffsetsException e) {
+            e.printStackTrace();
         }
     }
 
@@ -175,6 +182,20 @@ public class FirstEx extends Application {
             pageString = pageString + page.get(i).get("artist") + " - " + page.get(i).get("song") + "\n";
         }
         text.setText(pageString);
+
+
+        // Split the text into words
+        String[] words = text.getText().split(" ");
+
+        for (String word : words) {
+            Text wordText = new Text(word + " ");
+
+            if (word.equalsIgnoreCase(searchInput.getText())) {
+                wordText.setFill(Color.RED); // Set the color to red
+            }
+
+            out.getChildren().add(wordText);
+        }
     }
 
     private void setSearchField(String field) {

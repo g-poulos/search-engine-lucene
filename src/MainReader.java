@@ -78,6 +78,8 @@ public class MainReader {
     }
 
     private void highlightedHTMLResult(Query q, String field) throws InvalidTokenOffsetsException, IOException {
+        String header = "<u style=\"font-size:18px\">";
+
         SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
         QueryScorer scorer = new QueryScorer(q, field);
         Highlighter highlighter = new Highlighter(formatter, scorer);
@@ -86,7 +88,6 @@ public class MainReader {
 
         StringBuilder resultBuilder;
         htmlDocuments = new ArrayList<>();
-
         for(Document doc: foundDocuments) {
             resultBuilder = new StringBuilder();
             String text = doc.get(field);
@@ -95,21 +96,21 @@ public class MainReader {
 
 
             if (field.equals("artist")) {
-                resultBuilder.append("<u>" + highlightedText);
+                resultBuilder.append(header + highlightedText);
                 resultBuilder.append(" - " + doc.get("song") + "</u>");
                 resultBuilder.append("<br>" + doc.get("text").replace("  ", "<br>").substring(0, 80) + "<br>");
             } else if (field.equals("song")) {
-                resultBuilder.append("<u>" + doc.get("artist") + " - ");
+                resultBuilder.append(header + doc.get("artist") + " - ");
                 resultBuilder.append(highlightedText + "</u>");
                 resultBuilder.append("<br>" + doc.get("text").replace("  ", "<br>").substring(0, 80) + "<br>");
             } else if (field.equals("text")){
-                resultBuilder.append("<u>" + doc.get("artist") + " - ");
+                resultBuilder.append(header + doc.get("artist") + " - ");
                 resultBuilder.append(doc.get("song") + "</u>");
                 resultBuilder.append("<br>" + highlightedText.replace("  ", "<br>") + "<br>");
             } else {
                 String[] result = highlightedText.split("@", 3);
                 System.out.println(result.length);
-                resultBuilder.append("<u>" + result[0] + " - " +result[1] + "</u><br>" + result[2].replace("  ", "<br>") + "<br>");
+                resultBuilder.append(header + result[0] + " - " +result[1] + "</u><br>" + result[2].replace("  ", "<br>") + "<br>");
             }
 
             htmlDocuments.add(resultBuilder);

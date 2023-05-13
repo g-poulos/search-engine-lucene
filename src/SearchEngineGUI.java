@@ -31,6 +31,8 @@ public class SearchEngineGUI extends Application {
     private String searchField = "all";
     private TextField searchInput = new TextField();
     private WebView webView = new WebView();
+    private Label pageNum = new Label();
+    private MainReader reader = new MainReader();
 
     @Override
     public void start(Stage stage) {
@@ -38,7 +40,6 @@ public class SearchEngineGUI extends Application {
     }
 
     private void initUI(Stage stage) {
-        MainReader reader = new MainReader();
         var root = new VBox();
         root.setSpacing(10);
         root.setPadding(new Insets(30));
@@ -61,7 +62,9 @@ public class SearchEngineGUI extends Application {
         Button prevButton = new Button();
         prevButton.setText("Previous");
 
-        var buttons = new HBox(prevButton, nextButton);
+        var buttons = new HBox(pageNum, prevButton, nextButton);
+        HBox.setMargin(pageNum, new Insets(0, 30, 0, 0));
+        buttons.setSpacing(10);
         buttons.setAlignment(Pos.CENTER);
 
         EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
@@ -81,7 +84,7 @@ public class SearchEngineGUI extends Application {
     private HBox getSuggestionSection(MainReader reader) {
         ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
         suggestionsListView.setPrefSize(600, 100);
-        webView.setPrefHeight(250);
+        webView.setPrefHeight(400);
 
         Button clearSuggestions = new Button();
         clearSuggestions.setText("Clear");
@@ -92,6 +95,7 @@ public class SearchEngineGUI extends Application {
         };
         clearSuggestions.setOnAction(clear);
         HBox suggestionSection = new HBox(suggestionsListView, clearSuggestions);
+        suggestionSection.setPrefHeight(120);
         return suggestionSection;
     }
 
@@ -179,28 +183,33 @@ public class SearchEngineGUI extends Application {
         if (pageNumber < reader.getHtmlPages().size()-1)
             pageNumber = pageNumber + 1;
         this.showPage(reader.getHtmlPages().get(pageNumber));
-
     }
 
     private void show_prev(MainReader reader) {
         if (pageNumber > 1)
             pageNumber = pageNumber - 1;
         this.showPage(reader.getHtmlPages().get(pageNumber));
-
     }
 
     private void showPage(List<StringBuilder> page) {
         String pageString = "";
+        if (page.size() == 0) {
+            pageString = "No Results!";
+        }
 
         for (int i = 0; i < page.size(); ++i) {
             pageString = pageString + page.get(i) + "<br>";
         }
         webView.getEngine().loadContent(pageString);
-
+        updatePageNum();
     }
 
     private void setSearchField(String field) {
         this.searchField = field;
+    }
+
+    private void updatePageNum() {
+        pageNum.setText("Page: " + (pageNumber + 1) + " out of " + reader.getHtmlPages().size());
     }
 
     public static void main(String[] args) {

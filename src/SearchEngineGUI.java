@@ -18,6 +18,8 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+
+import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,43 +28,36 @@ import java.util.List;
 public class SearchEngineGUI extends Application {
     private int pageNumber = 0;
     private List<String> suggestions = new ArrayList<>();
-    private String searchField = "song";
+    private String searchField = "all";
     private TextField searchInput = new TextField();
     private WebView webView = new WebView();
 
     @Override
     public void start(Stage stage) {
-
         initUI(stage);
     }
 
     private void initUI(Stage stage) {
-        Text outputList = new Text();
-        outputList.setFont(new Font(15));
-        outputList.setTextAlignment(TextAlignment.LEFT);
-
-
+        MainReader reader = new MainReader();
         var root = new VBox();
         root.setSpacing(10);
         root.setPadding(new Insets(30));
         root.setAlignment(Pos.CENTER);
-
         var scene = new Scene(root, 800, 600);
+
         var lbl = new Label("Lucene Search Engine\n");
         lbl.setAlignment(Pos.CENTER);
         lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
+        Text outputList = new Text();
+        outputList.setFont(new Font(15));
+        outputList.setTextAlignment(TextAlignment.LEFT);
+
         HBox radioButtons = getRadioButtonOptions();
-        MainReader reader = new MainReader();
-
-
-        ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
-        suggestionsListView.setPrefHeight(100);
-        webView.setPrefHeight(250);
+        HBox suggestionSection = getSuggestionSection(reader);
 
         Button nextButton = new Button();
         nextButton.setText("Next");
-
         Button prevButton = new Button();
         prevButton.setText("Previous");
 
@@ -77,10 +72,27 @@ public class SearchEngineGUI extends Application {
         prevButton.setOnAction(buttonPrev);
         searchInput.setOnAction(search);
 
-        root.getChildren().addAll(lbl, searchInput, suggestionsListView, radioButtons, buttons, webView);
+        root.getChildren().addAll(lbl, searchInput, suggestionSection, radioButtons, buttons, webView);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
         stage.show();
+    }
+
+    private HBox getSuggestionSection(MainReader reader) {
+        ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
+        suggestionsListView.setPrefSize(600, 100);
+        webView.setPrefHeight(250);
+
+        Button clearSuggestions = new Button();
+        clearSuggestions.setText("Clear");
+        clearSuggestions.setPrefSize(50, 100);
+        EventHandler<ActionEvent> clear = e -> {
+            suggestionsListView.getItems().clear();
+            suggestions.clear();
+        };
+        clearSuggestions.setOnAction(clear);
+        HBox suggestionSection = new HBox(suggestionsListView, clearSuggestions);
+        return suggestionSection;
     }
 
     private ListView<String> getSuggestionsListView(MainReader reader, TextField searchField) {
@@ -117,19 +129,25 @@ public class SearchEngineGUI extends Application {
         RadioButton radioButton1 = new RadioButton("Artist");
         RadioButton radioButton2 = new RadioButton("Song");
         RadioButton radioButton3 = new RadioButton("Lyrics");
+        RadioButton radioButton4 = new RadioButton("All");
 
         radioButton1.setToggleGroup(toggleGroup);
         radioButton2.setToggleGroup(toggleGroup);
         radioButton3.setToggleGroup(toggleGroup);
+        radioButton4.setToggleGroup(toggleGroup);
 
         EventHandler<ActionEvent> setToArtist = e -> this.setSearchField("artist");
         EventHandler<ActionEvent> setToSong = e -> this.setSearchField("song");
         EventHandler<ActionEvent> setToLyrics = e -> this.setSearchField("text");
+        EventHandler<ActionEvent> setToAll = e -> this.setSearchField("all");
+
         radioButton1.setOnAction(setToArtist);
         radioButton2.setOnAction(setToSong);
         radioButton3.setOnAction(setToLyrics);
+        radioButton4.setOnAction(setToAll);
+        radioButton4.setSelected(true);
 
-        var radioButtons = new HBox(chooseFieldText, radioButton1, radioButton2, radioButton3);
+        var radioButtons = new HBox(chooseFieldText, radioButton1, radioButton2, radioButton3, radioButton4);
         radioButtons.setAlignment(Pos.CENTER);
         radioButtons.setSpacing(10);
         return radioButtons;

@@ -80,10 +80,12 @@ public class IndexCreator {
         doc.add(new TextField("artist", line[0], Field.Store.YES));         // TODO: Check the difference StringField/TextField
         doc.add(new TextField("song", line[1], Field.Store.YES));
         doc.add(new TextField("text", line[2], Field.Store.YES));
+        doc.add(new TextField("all", line[0] + "@"+ line[1] + "@"+ line[2], Field.Store.YES));
+
         w.addDocument(doc);
     }
 
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException {
         IndexCreator idxCreator = new IndexCreator();
         StandardAnalyzer analyzer = new StandardAnalyzer();
 

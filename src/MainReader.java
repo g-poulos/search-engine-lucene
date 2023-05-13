@@ -5,6 +5,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -12,7 +13,10 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.*;
+import org.apache.lucene.search.grouping.*;
 import org.apache.lucene.store.FSDirectory;
+
+import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,9 +49,8 @@ public class MainReader {
 
         fillFoundDocuments(searcher, hits);
         highlightedHTMLResult(query, field);
-        System.out.println("Found " + hits.length + " hits.");
-
         createPages();
+        System.out.println("Found " + hits.length + " hits.");
     }
 
     private void createPages() {
@@ -78,7 +81,7 @@ public class MainReader {
         SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
         QueryScorer scorer = new QueryScorer(q, field);
         Highlighter highlighter = new Highlighter(formatter, scorer);
-        highlighter.setTextFragmenter(new SimpleFragmenter(100));
+        highlighter.setTextFragmenter(new SimpleFragmenter(10000));
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
         StringBuilder resultBuilder;
@@ -99,10 +102,14 @@ public class MainReader {
                 resultBuilder.append("<u>" + doc.get("artist") + " - ");
                 resultBuilder.append(highlightedText + "</u>");
                 resultBuilder.append("<br>" + doc.get("text").replace("  ", "<br>").substring(0, 80) + "<br>");
-            } else {
+            } else if (field.equals("text")){
                 resultBuilder.append("<u>" + doc.get("artist") + " - ");
                 resultBuilder.append(doc.get("song") + "</u>");
                 resultBuilder.append("<br>" + highlightedText.replace("  ", "<br>") + "<br>");
+            } else {
+                String[] result = highlightedText.split("@", 3);
+                System.out.println(result.length);
+                resultBuilder.append("<u>" + result[0] + " - " +result[1] + "</u><br>" + result[2].replace("  ", "<br>") + "<br>");
             }
 
             htmlDocuments.add(resultBuilder);

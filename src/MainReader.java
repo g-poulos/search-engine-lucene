@@ -23,13 +23,11 @@ import java.util.List;
 
 public class MainReader {
     private ArrayList<Document> foundDocuments;
-    private List<List<Document>> documentPages = new ArrayList<>();
     private ArrayList<StringBuilder> htmlDocuments;
     private List<List<StringBuilder>> htmlPages = new ArrayList<>();
 
     public void runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
         foundDocuments = new ArrayList<>();
-        documentPages = new ArrayList<>();
         htmlDocuments = new ArrayList<>();
         htmlPages = new ArrayList<>();
 
@@ -45,57 +43,14 @@ public class MainReader {
         TopDocs docs = searcher.search(query, hitsPerPage);
         ScoreDoc[] hits = docs.scoreDocs;
 
-        fillFoundDocuments(searcher, hits, query);
+        fillFoundDocuments(searcher, hits);
+        highlightedHTMLResult(query);
         System.out.println("Found " + hits.length + " hits.");
 
         createPages();
     }
 
     private void createPages() {
-        ArrayList<Document> page = new ArrayList<>();
-        int batch = 0;
-        for (Document doc: foundDocuments) {
-            if (batch == 10) {
-                documentPages.add(page);
-                page = new ArrayList<>(Arrays.asList(doc));
-                batch = 1;
-            }else {
-                page.add(doc);
-                batch = batch + 1;
-            }
-        }
-        documentPages.add(page);
-    }
-
-    private void fillFoundDocuments(IndexSearcher searcher, ScoreDoc[] hits, Query q) throws IOException, InvalidTokenOffsetsException {
-        SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
-        QueryScorer scorer = new QueryScorer(q, "song");
-        Highlighter highlighter = new Highlighter(formatter, scorer);
-        highlighter.setTextFragmenter(new SimpleFragmenter(50));
-        StandardAnalyzer analyzer = new StandardAnalyzer();
-
-
-        StringBuilder resultBuilder;
-        htmlDocuments = new ArrayList<>();
-
-        for(int i = 0; i< hits.length; ++i) {
-            int docId = hits[i].doc;
-            Document d = searcher.doc(docId);
-            foundDocuments.add(d);
-
-            resultBuilder = new StringBuilder();
-            String text = d.get("song");
-            TokenStream tokenStream = TokenSources.getTokenStream("song", text, analyzer);
-            String highlightedText = highlighter.getBestFragment(tokenStream, text);
-
-
-            resultBuilder.append(d.get("artist") + " - ");
-            resultBuilder.append(highlightedText);
-//            resultBuilder.append( "<br>" + d.get("text").substring(0, 200) + "<br>");
-            htmlDocuments.add(resultBuilder);
-            System.out.println(resultBuilder);
-        }
-
         ArrayList<StringBuilder> page = new ArrayList<>();
         int batch = 0;
         for (StringBuilder doc: htmlDocuments) {
@@ -109,20 +64,44 @@ public class MainReader {
             }
         }
         htmlPages.add(page);
+    }
 
+    private void fillFoundDocuments(IndexSearcher searcher, ScoreDoc[] hits) throws IOException {
+        for(int i = 0; i< hits.length; ++i) {
+            int docId = hits[i].doc;
+            Document d = searcher.doc(docId);
+            foundDocuments.add(d);
+        }
 
     }
 
-    private void highlightQueryResult() {
+    private void highlightedHTMLResult(Query q) throws InvalidTokenOffsetsException, IOException {
+        SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
+        QueryScorer scorer = new QueryScorer(q, "song");
+        Highlighter highlighter = new Highlighter(formatter, scorer);
+        highlighter.setTextFragmenter(new SimpleFragmenter(50));
+        StandardAnalyzer analyzer = new StandardAnalyzer();
 
+        StringBuilder resultBuilder;
+        htmlDocuments = new ArrayList<>();
+
+        for(Document doc: foundDocuments) {
+            resultBuilder = new StringBuilder();
+            String text = doc.get("song");
+            TokenStream tokenStream = TokenSources.getTokenStream("song", text, analyzer);
+            String highlightedText = highlighter.getBestFragment(tokenStream, text);
+
+
+            resultBuilder.append(doc.get("artist") + " - ");
+            resultBuilder.append(highlightedText);
+//            resultBuilder.append( "<br>" + d.get("text").substring(0, 200) + "<br>");
+            htmlDocuments.add(resultBuilder);
+            System.out.println(resultBuilder);
+        }
     }
 
     public ArrayList<Document> getFoundDocuments() {
         return foundDocuments;
-    }
-
-    public List<List<Document>> getDocumentPages() {
-        return documentPages;
     }
 
     public ArrayList<StringBuilder> getHtmlDocuments() {

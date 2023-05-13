@@ -44,7 +44,7 @@ public class MainReader {
         ScoreDoc[] hits = docs.scoreDocs;
 
         fillFoundDocuments(searcher, hits);
-        highlightedHTMLResult(query);
+        highlightedHTMLResult(query, field);
         System.out.println("Found " + hits.length + " hits.");
 
         createPages();
@@ -72,14 +72,13 @@ public class MainReader {
             Document d = searcher.doc(docId);
             foundDocuments.add(d);
         }
-
     }
 
-    private void highlightedHTMLResult(Query q) throws InvalidTokenOffsetsException, IOException {
+    private void highlightedHTMLResult(Query q, String field) throws InvalidTokenOffsetsException, IOException {
         SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
-        QueryScorer scorer = new QueryScorer(q, "song");
+        QueryScorer scorer = new QueryScorer(q, field);
         Highlighter highlighter = new Highlighter(formatter, scorer);
-        highlighter.setTextFragmenter(new SimpleFragmenter(50));
+        highlighter.setTextFragmenter(new SimpleFragmenter(100));
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
         StringBuilder resultBuilder;
@@ -87,14 +86,25 @@ public class MainReader {
 
         for(Document doc: foundDocuments) {
             resultBuilder = new StringBuilder();
-            String text = doc.get("song");
-            TokenStream tokenStream = TokenSources.getTokenStream("song", text, analyzer);
+            String text = doc.get(field);
+            TokenStream tokenStream = TokenSources.getTokenStream(field, text, analyzer);
             String highlightedText = highlighter.getBestFragment(tokenStream, text);
 
 
-            resultBuilder.append(doc.get("artist") + " - ");
-            resultBuilder.append(highlightedText);
-//            resultBuilder.append( "<br>" + d.get("text").substring(0, 200) + "<br>");
+            if (field.equals("artist")) {
+                resultBuilder.append("<u>" + highlightedText);
+                resultBuilder.append(" - " + doc.get("song") + "</u>");
+                resultBuilder.append("<br>" + doc.get("text").replace("  ", "<br>").substring(0, 80) + "<br>");
+            } else if (field.equals("song")) {
+                resultBuilder.append("<u>" + doc.get("artist") + " - ");
+                resultBuilder.append(highlightedText + "</u>");
+                resultBuilder.append("<br>" + doc.get("text").replace("  ", "<br>").substring(0, 80) + "<br>");
+            } else {
+                resultBuilder.append("<u>" + doc.get("artist") + " - ");
+                resultBuilder.append(doc.get("song") + "</u>");
+                resultBuilder.append("<br>" + highlightedText.replace("  ", "<br>") + "<br>");
+            }
+
             htmlDocuments.add(resultBuilder);
             System.out.println(resultBuilder);
         }

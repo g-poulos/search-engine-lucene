@@ -12,8 +12,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -48,18 +46,35 @@ public class SearchEngineGUI extends Application {
         lbl.setAlignment(Pos.CENTER);
         lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
-        Text outputList = new Text();
-        outputList.setFont(new Font(15));
-        outputList.setTextAlignment(TextAlignment.LEFT);
-
         HBox radioButtons = getRadioButtonOptions();
         HBox suggestionSection = getSuggestionSection(reader);
+        HBox searchOptions = getSearchOptions();
 
+        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
+        searchInput.setOnAction(search);
 
+        root.getChildren().addAll(lbl, searchInput, suggestionSection, radioButtons, searchOptions, webView);
+        stage.setTitle("Lucene Search Engine");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private HBox getSearchOptions() {
         Label sortBy = new Label("Sort By\n");
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.getItems().addAll("None", "Artist", "Song", "Lyrics");
         comboBox.setValue("None");
+
+        Button prevButton = new Button();
+        prevButton.setText("Previous");
+        Button nextButton = new Button();
+        nextButton.setText("Next");
+
+        var buttons = new HBox(sortBy, comboBox, pageNum, prevButton, nextButton);
+        HBox.setMargin(pageNum, new Insets(0, 30, 0, 0));
+        buttons.setSpacing(10);
+        buttons.setAlignment(Pos.CENTER_LEFT);
+
         comboBox.setOnAction(event -> {
             String selectedValue = comboBox.getValue();
             if (selectedValue.equals("Artist")) {
@@ -74,31 +89,13 @@ public class SearchEngineGUI extends Application {
             pageNumber = 0;
             showPage(reader.getHtmlPages().get(pageNumber));
         });
-
-        Button prevButton = new Button();
-        prevButton.setText("Previous");
-        Button nextButton = new Button();
-        nextButton.setText("Next");
-
-
-
-        var buttons = new HBox(sortBy, comboBox, pageNum, prevButton, nextButton);
-        HBox.setMargin(pageNum, new Insets(0, 30, 0, 0));
-        buttons.setSpacing(10);
-        buttons.setAlignment(Pos.CENTER_LEFT);
-
-        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
         EventHandler<ActionEvent> buttonNext = e -> this.show_next(reader);
         EventHandler<ActionEvent> buttonPrev = e -> this.show_prev(reader);
 
+
         nextButton.setOnAction(buttonNext);
         prevButton.setOnAction(buttonPrev);
-        searchInput.setOnAction(search);
-
-        root.getChildren().addAll(lbl, searchInput, suggestionSection, radioButtons, buttons, webView);
-        stage.setTitle("Lucene Search Engine");
-        stage.setScene(scene);
-        stage.show();
+        return buttons;
     }
 
     private HBox getSuggestionSection(MainReader reader) {

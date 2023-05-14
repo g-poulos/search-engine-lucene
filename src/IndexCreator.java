@@ -3,22 +3,17 @@ package src;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.lang.*;
 
 public class IndexCreator {
 
@@ -77,10 +72,14 @@ public class IndexCreator {
 
     private static void addDoc(IndexWriter w, String[] line) throws IOException {
         Document doc = new Document();
-        doc.add(new TextField("artist", line[0], Field.Store.YES));         // TODO: Check the difference StringField/TextField
-        doc.add(new TextField("song", line[1], Field.Store.YES));
-        doc.add(new TextField("text", line[2], Field.Store.YES));
-        doc.add(new TextField("all", line[0] + "@"+ line[1] + "@"+ line[2], Field.Store.YES));
+        String artist = line[0].replace("\"", "");
+        String song = line[1].replace("\"", "");
+        String text = line[2].replace("\"", "");
+
+        doc.add(new TextField("artist", artist, Field.Store.YES));
+        doc.add(new TextField("song", song, Field.Store.YES));
+        doc.add(new TextField("text", text, Field.Store.YES));
+        doc.add(new TextField("all", artist + "@"+ song + "@"+ text, Field.Store.YES));
 
         w.addDocument(doc);
     }

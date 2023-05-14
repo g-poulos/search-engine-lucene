@@ -18,8 +18,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
-
-import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,15 +55,37 @@ public class SearchEngineGUI extends Application {
         HBox radioButtons = getRadioButtonOptions();
         HBox suggestionSection = getSuggestionSection(reader);
 
-        Button nextButton = new Button();
-        nextButton.setText("Next");
+
+        Label sortBy = new Label("Sort By\n");
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getItems().addAll("None", "Artist", "Song", "Lyrics");
+        comboBox.setValue("None");
+        comboBox.setOnAction(event -> {
+            String selectedValue = comboBox.getValue();
+            if (selectedValue.equals("Artist")) {
+                reader.sortDocumentsBy("artist");
+            } else if (selectedValue.equals("Song")) {
+                reader.sortDocumentsBy("song");
+            } else if (selectedValue.equals("Lyrics")) {
+                reader.sortDocumentsBy("text");
+            } else {
+                reader.toUnsortedDocuments();
+            }
+            pageNumber = 0;
+            showPage(reader.getHtmlPages().get(pageNumber));
+        });
+
         Button prevButton = new Button();
         prevButton.setText("Previous");
+        Button nextButton = new Button();
+        nextButton.setText("Next");
 
-        var buttons = new HBox(pageNum, prevButton, nextButton);
+
+
+        var buttons = new HBox(sortBy, comboBox, pageNum, prevButton, nextButton);
         HBox.setMargin(pageNum, new Insets(0, 30, 0, 0));
         buttons.setSpacing(10);
-        buttons.setAlignment(Pos.CENTER);
+        buttons.setAlignment(Pos.CENTER_LEFT);
 
         EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
         EventHandler<ActionEvent> buttonNext = e -> this.show_next(reader);

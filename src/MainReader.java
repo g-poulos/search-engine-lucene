@@ -5,41 +5,36 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.highlight.*;
-import org.apache.lucene.search.grouping.*;
 import org.apache.lucene.store.FSDirectory;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 
 public class MainReader {
     private ArrayList<Document> foundDocuments;
     private ArrayList<StringBuilder> htmlDocuments;
     private List<List<StringBuilder>> htmlPages = new ArrayList<>();
+    private Query lastQuery;
+    private String lastField;
+    private List<List<StringBuilder>> htmlPagesCopy;
 
     public void runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
         foundDocuments = new ArrayList<>();
-        htmlDocuments = new ArrayList<>();
-        htmlPages = new ArrayList<>();
 
         Path path = Paths.get(System.getProperty("user.dir") + "/index");
         FSDirectory index = FSDirectory.open(path);
 
         StandardAnalyzer analyzer = new StandardAnalyzer();
         Query query = new QueryParser(field, analyzer).parse(queryStr);
+        lastQuery = query;
+        lastField = field;
 
         int hitsPerPage = 100;
         IndexReader reader = DirectoryReader.open(index);
@@ -53,22 +48,6 @@ public class MainReader {
         System.out.println("Found " + hits.length + " hits.");
     }
 
-    private void createPages() {
-        ArrayList<StringBuilder> page = new ArrayList<>();
-        int batch = 0;
-        for (StringBuilder doc: htmlDocuments) {
-            if (batch == 10) {
-                htmlPages.add(page);
-                page = new ArrayList<>(Arrays.asList(doc));
-                batch = 1;
-            }else {
-                page.add(doc);
-                batch = batch + 1;
-            }
-        }
-        htmlPages.add(page);
-    }
-
     private void fillFoundDocuments(IndexSearcher searcher, ScoreDoc[] hits) throws IOException {
         for(int i = 0; i< hits.length; ++i) {
             int docId = hits[i].doc;
@@ -78,6 +57,7 @@ public class MainReader {
     }
 
     private void highlightedHTMLResult(Query q, String field) throws InvalidTokenOffsetsException, IOException {
+        htmlDocuments = new ArrayList<>();
         String header = "<u style=\"font-size:18px\">";
 
         SimpleHTMLFormatter formatter = new SimpleHTMLFormatter();
@@ -109,13 +89,46 @@ public class MainReader {
                 resultBuilder.append("<br>" + highlightedText.replace("  ", "<br>") + "<br>");
             } else {
                 String[] result = highlightedText.split("@", 3);
-                System.out.println(result.length);
                 resultBuilder.append(header + result[0] + " - " +result[1] + "</u><br>" + result[2].replace("  ", "<br>") + "<br>");
             }
 
             htmlDocuments.add(resultBuilder);
-            System.out.println(resultBuilder);
+//            System.out.println(resultBuilder);
         }
+    }
+
+    private void createPages() {
+        htmlPages = new ArrayList<>();
+        ArrayList<StringBuilder> page = new ArrayList<>();
+        int batch = 0;
+        for (StringBuilder doc: htmlDocuments) {
+            if (batch == 10) {
+                htmlPages.add(page);
+                page = new ArrayList<>(Arrays.asList(doc));
+                batch = 1;
+            }else {
+                page.add(doc);
+                batch = batch + 1;
+            }
+        }
+        htmlPages.add(page);
+    }
+
+    public void sortDocumentsBy(String field) {
+        try{
+            htmlPagesCopy = new ArrayList<>(htmlPages);
+            Collections.sort(foundDocuments, Comparator.comparing(d -> d.get(field)));
+            highlightedHTMLResult(lastQuery, lastField);
+            createPages();
+        } catch (InvalidTokenOffsetsException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void toUnsortedDocuments() {
+        htmlPages = htmlPagesCopy;
     }
 
     public ArrayList<Document> getFoundDocuments() {
@@ -129,6 +142,5 @@ public class MainReader {
     public List<List<StringBuilder>> getHtmlPages() {
         return htmlPages;
     }
-
 }
 

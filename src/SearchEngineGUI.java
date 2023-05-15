@@ -16,7 +16,10 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.store.FSDirectory;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +31,7 @@ public class SearchEngineGUI extends Application {
     private TextField searchInput = new TextField();
     private WebView webView = new WebView();
     private Label pageNum = new Label();
-    private MainReader reader = new MainReader();
+    private static MainReader reader;
 
     @Override
     public void start(Stage stage) {
@@ -203,7 +206,7 @@ public class SearchEngineGUI extends Application {
     }
 
     private void show_prev(MainReader reader) {
-        if (pageNumber > 1)
+        if (pageNumber >= 1)
             pageNumber = pageNumber - 1;
         this.showPage(reader.getHtmlPages().get(pageNumber));
     }
@@ -229,7 +232,10 @@ public class SearchEngineGUI extends Application {
         pageNum.setText("Page: " + (pageNumber + 1) + " out of " + reader.getHtmlPages().size());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        Path path = Paths.get(System.getProperty("user.dir") + "/index");
+        FSDirectory index = FSDirectory.open(path);
+        reader = new MainReader(index);
         launch(args);
     }
 }

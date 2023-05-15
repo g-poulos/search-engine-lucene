@@ -24,12 +24,14 @@ public class MainReader {
     private Query lastQuery;
     private String lastField;
     private List<List<StringBuilder>> htmlPagesCopy;
+    private FSDirectory index;
+
+    public MainReader(FSDirectory index) {
+        this.index = index;
+    }
 
     public void runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
         foundDocuments = new ArrayList<>();
-
-        Path path = Paths.get(System.getProperty("user.dir") + "/index");
-        FSDirectory index = FSDirectory.open(path);
 
         StandardAnalyzer analyzer = new StandardAnalyzer();
         Query query = new QueryParser(field, analyzer).parse(queryStr);

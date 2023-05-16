@@ -10,10 +10,7 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.highlight.*;
 import org.apache.lucene.store.FSDirectory;
-
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -30,7 +27,7 @@ public class MainReader {
         this.index = index;
     }
 
-    public void runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
+    public int runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
         foundDocuments = new ArrayList<>();
 
         StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -48,6 +45,8 @@ public class MainReader {
         highlightedHTMLResult(query, field);
         createPages();
         System.out.println("Found " + hits.length + " hits.");
+
+        return hitsPerPage;
     }
 
     private void fillFoundDocuments(IndexSearcher searcher, ScoreDoc[] hits) throws IOException {
@@ -69,12 +68,14 @@ public class MainReader {
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
         StringBuilder resultBuilder;
-        htmlDocuments = new ArrayList<>();
+        String text;
+        TokenStream tokenStream;
+        String highlightedText;
         for(Document doc: foundDocuments) {
             resultBuilder = new StringBuilder();
-            String text = doc.get(field);
-            TokenStream tokenStream = TokenSources.getTokenStream(field, text, analyzer);
-            String highlightedText = highlighter.getBestFragment(tokenStream, text);
+            text = doc.get(field);
+            tokenStream = TokenSources.getTokenStream(field, text, analyzer);
+            highlightedText = highlighter.getBestFragment(tokenStream, text);
 
 
             if (field.equals("artist")) {

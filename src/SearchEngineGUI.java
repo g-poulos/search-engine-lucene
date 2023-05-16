@@ -196,13 +196,12 @@ public class SearchEngineGUI extends Application {
         System.out.println("Search Field: " + this.searchField);
 
         try {
-            reader.runQuery(input, this.searchField);
-            if (reader.getHtmlPages().isEmpty()) {
-                webView.getEngine().loadContent("No Results");
-            } else {
+            int hits = reader.runQuery(input, this.searchField);
+            if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
+            } else {
+                webView.getEngine().loadContent("No Results");
             }
-
 
             if (suggestions.contains(input)) {
                 suggestions.remove(input);
@@ -219,14 +218,21 @@ public class SearchEngineGUI extends Application {
     }
 
     private void show_next(MainReader reader) {
-        if (pageNumber < reader.getHtmlPages().size()-1)
-            pageNumber = pageNumber + 1;
+        if (pageNumber + 1 > reader.getHtmlPages().size()-1) {
+            pageNumber = 0;
+        } else {
+            pageNumber++;
+        }
         this.showPage(reader.getHtmlPages().get(pageNumber));
     }
 
     private void show_prev(MainReader reader) {
-        if (pageNumber >= 1)
+        if (pageNumber -1 < 0) {
+            pageNumber = reader.getHtmlPages().size()-1;
+        } else {
             pageNumber = pageNumber - 1;
+        }
+
         this.showPage(reader.getHtmlPages().get(pageNumber));
     }
 

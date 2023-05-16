@@ -17,7 +17,7 @@ import java.util.ArrayList;
 
 public class IndexCreator {
 
-    public ArrayList<String[]> readData(String filename) {
+    public static ArrayList<String[]> readData(String filename) {
         String line;
         String artist;
         String song;
@@ -54,10 +54,9 @@ public class IndexCreator {
     }
 
 
-    public Directory createIndex(ArrayList<String[]> songs, StandardAnalyzer analyzer) throws IOException {
+    public static Directory createIndex(ArrayList<String[]> songs, StandardAnalyzer analyzer) throws IOException {
 
         Path path = Paths.get(System.getProperty("user.dir") + "/index");
-        System.out.println();
         FSDirectory index = FSDirectory.open(path);
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
         IndexWriter w = new IndexWriter(index, config);
@@ -85,11 +84,10 @@ public class IndexCreator {
     }
 
     public static void main(String[] args) throws IOException {
-        IndexCreator idxCreator = new IndexCreator();
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
-        ArrayList<String[]> textList = idxCreator.readData("spotify_millsongdata_cl.csv");
-        idxCreator.createIndex(textList, analyzer);
+        ArrayList<String[]> textList = readData("spotify_millsongdata_cl.csv");
+        createIndex(textList, analyzer);
 
     }
 

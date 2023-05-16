@@ -53,13 +53,26 @@ public class SearchEngineGUI extends Application {
         HBox suggestionSection = getSuggestionSection(reader);
         HBox searchOptions = getSearchOptions();
 
-        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
-        searchInput.setOnAction(search);
+        HBox searchRow = getSearchRow();
 
-        root.getChildren().addAll(lbl, searchInput, suggestionSection, radioButtons, searchOptions, webView);
+        root.getChildren().addAll(lbl, searchRow, suggestionSection, radioButtons, searchOptions, webView);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
         stage.show();
+    }
+
+    private HBox getSearchRow() {
+        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
+        Button searchButton = new Button();
+        searchButton.setText("Search");
+        searchButton.setOnAction(search);
+        searchInput.setOnAction(search);
+        searchInput.setPrefWidth(450);
+
+        HBox searchRow = new HBox(searchInput, searchButton);
+        searchRow.setAlignment(Pos.CENTER);
+        searchRow.setPrefSize(500, 50);
+        return searchRow;
     }
 
     private HBox getSearchOptions() {
@@ -103,7 +116,7 @@ public class SearchEngineGUI extends Application {
 
     private HBox getSuggestionSection(MainReader reader) {
         ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
-        suggestionsListView.setPrefSize(600, 100);
+        suggestionsListView.setPrefSize(420, 100);
         webView.setPrefHeight(400);
 
         Button clearSuggestions = new Button();
@@ -115,7 +128,8 @@ public class SearchEngineGUI extends Application {
         };
         clearSuggestions.setOnAction(clear);
         HBox suggestionSection = new HBox(suggestionsListView, clearSuggestions);
-        suggestionSection.setPrefHeight(120);
+        suggestionSection.setAlignment(Pos.CENTER);
+        suggestionSection.setPrefSize(500, 200);
         return suggestionSection;
     }
 
@@ -183,7 +197,12 @@ public class SearchEngineGUI extends Application {
 
         try {
             reader.runQuery(input, this.searchField);
-            this.showPage(reader.getHtmlPages().get(pageNumber));
+            if (reader.getHtmlPages().isEmpty()) {
+                webView.getEngine().loadContent("No Results");
+            } else {
+                this.showPage(reader.getHtmlPages().get(pageNumber));
+            }
+
 
             if (suggestions.contains(input)) {
                 suggestions.remove(input);

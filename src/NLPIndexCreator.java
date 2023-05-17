@@ -1,6 +1,7 @@
 package src;
 
 
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -20,7 +21,7 @@ public class NLPIndexCreator {
     private static void createIndex() throws IOException {
         Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");
         FSDirectory index = FSDirectory.open(path);
-        StandardAnalyzer analyzer = new StandardAnalyzer();
+        WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
         IndexWriter w = new IndexWriter(index, config);
 
@@ -45,7 +46,6 @@ public class NLPIndexCreator {
 
         doc.add(new TextField("word", word, Field.Store.YES));
         doc.add(new StoredField("vec", vec));
-
         w.addDocument(doc);
     }
 

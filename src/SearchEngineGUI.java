@@ -62,7 +62,7 @@ public class SearchEngineGUI extends Application {
     }
 
     private HBox getSearchRow() {
-        EventHandler<ActionEvent> search = e -> this.search_query(reader, searchInput);
+        EventHandler<ActionEvent> search = e -> this.search_query();
         Button searchButton = new Button();
         searchButton.setText("Search");
         searchButton.setOnAction(search);
@@ -136,7 +136,6 @@ public class SearchEngineGUI extends Application {
     private ListView<String> getSuggestionsListView(MainReader reader, TextField searchField) {
         ListView<String> suggestionsListView = new ListView<>();
 
-        // Update suggestions when the text changes
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             List<String> filteredSuggestions = new ArrayList<>();
             for (String suggestion : suggestions) {
@@ -147,13 +146,12 @@ public class SearchEngineGUI extends Application {
             suggestionsListView.setItems(FXCollections.observableArrayList(filteredSuggestions));
         });
 
-        // Select a suggestion when clicked
         suggestionsListView.setOnMouseClicked(event -> {
             String selectedSuggestion = suggestionsListView.getSelectionModel().getSelectedItem();
             if (selectedSuggestion != null) {
                 searchField.setText(selectedSuggestion);
                 suggestionsListView.getItems().clear();
-                this.search_query(reader, searchField);
+                this.search_query();
 
             }
         });
@@ -191,22 +189,20 @@ public class SearchEngineGUI extends Application {
         return radioButtons;
     }
 
-    private void search_query(MainReader reader, TextField b) {
-        String input = b.getText();
+    private void search_query() {
         System.out.println("Search Field: " + this.searchField);
-
         try {
-            int hits = reader.runQuery(input, this.searchField);
+            int hits = reader.runQuery(searchInput.getText(), this.searchField);
             if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
             } else {
                 webView.getEngine().loadContent("No Results");
             }
 
-            if (suggestions.contains(input)) {
-                suggestions.remove(input);
+            if (suggestions.contains(searchInput.getText())) {
+                suggestions.remove(searchInput.getText());
             }
-            this.suggestions.add(0, input);
+            this.suggestions.add(0, searchInput.getText());
 
         } catch (IOException ex) {
             ex.printStackTrace();

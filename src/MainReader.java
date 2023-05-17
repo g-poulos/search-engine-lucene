@@ -170,5 +170,10 @@ public class MainReader {
     public List<List<StringBuilder>> getHtmlPages() {
         return htmlPages;
     }
+
+    public Set<String> getUniqueWords() {
+        return uniqueWords;
+    }
+
 }
 

@@ -1,19 +1,21 @@
 package src;
 
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.codecs.uniformsplit.sharedterms.STIntersectBlockReader;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
-
+import org.apache.lucene.util.BytesRef;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
 
 public class NLPSearcher {
     private FSDirectory nlpIndex;
@@ -36,23 +38,33 @@ public class NLPSearcher {
         return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
     }
 
-    public String vectorize(String queryStr) throws ParseException, IOException {
-        StandardAnalyzer analyzer = new StandardAnalyzer();
-        Query query = new QueryParser("word", analyzer).parse(queryStr);
+    public ArrayList<Document> vectorize(String queryStr, int numOfHits) throws ParseException {
+        ArrayList<Document> similarWords = new ArrayList<>();
+        FuzzyQuery fuzzyQuery = new FuzzyQuery(new Term("word", queryStr));
 
-        int hitsPerPage = 1;
-        IndexReader reader = DirectoryReader.open(nlpIndex);
-        IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs docs = searcher.search(query, hitsPerPage);
-        ScoreDoc[] hits = docs.scoreDocs;
+        IndexSearcher searcher = null;
+        ScoreDoc[] hits = new ScoreDoc[0];
+        String strVec = null;
+        try {
+            IndexReader reader = DirectoryReader.open(nlpIndex);
+            searcher = new IndexSearcher(reader);
+            TopDocs docs = searcher.search(fuzzyQuery, numOfHits);
+            hits = docs.scoreDocs;
 
-        System.out.println("Found " + hits.length + " hits.");
-        return searcher.doc(hits[0].doc).get("vec");
+            for(int i = 0; i< hits.length; ++i) {
+                int docId = hits[i].doc;
+                Document d = searcher.doc(docId);
+                similarWords.add(d);
+            }
+        } catch (IOException e) {
+            System.out.println("Vectorize Query: Cannot open index");
+        }
+        return similarWords;
     }
 
-    public static Double[] toDoubleVector(String vec) {
+    public static double[] toDoubleVector(String vec) {
         String[] strVec = vec.split(" ");
-        Double[] doubleVec = new Double[strVec.length];
+        double[] doubleVec = new double[strVec.length];
 
         for (int i = 0; i < strVec.length; i++) {
             doubleVec[i] = Double.parseDouble(strVec[i]);
@@ -60,12 +72,38 @@ public class NLPSearcher {
         return doubleVec;
     }
 
+    public void searchSuggestions(String inputQuery, Set<String> uniqueWords) throws ParseException {
+        ArrayList<Document> inputQueryVec = vectorize(inputQuery, 1);
+        System.out.println(inputQueryVec.get(0).get("word"));
+        System.out.println(inputQueryVec.get(0).get("vec"));
+
+        ArrayList<Document> simiralWords = vectorize(inputQuery, 100);
+        ArrayList<Suggestion> suggestions = new ArrayList<>();
+        double cs;
+        for (Document d: simiralWords) {
+            if (uniqueWords.contains(d.get("word")) && !d.get("word").equals(inputQuery)) {
+                 cs = cosineSimilarity(toDoubleVector(inputQueryVec.get(0).get("vec")),
+                                toDoubleVector(d.get("vec")));
+                suggestions.add(new Suggestion(d.get("word"), cs));
+            }
+        }
+        Collections.sort(suggestions, Comparator.comparing(s -> s.getSimilarity()));
+        Collections.reverse(suggestions);
+
+        for (Suggestion s: suggestions) {
+            System.out.println(s);
+        }
+
+    }
+
+
     public static void main(String[] args) throws IOException, ParseException {
         Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");
         FSDirectory index = FSDirectory.open(path);
 
         NLPSearcher s = new NLPSearcher(index);
-        s.vectorize("lo");
-
+//        double[] vec1 = toDoubleVector(s.vectorize("man"));
+//        double[] vec2 = toDoubleVector(s.vectorize("loving~3"));
+//        System.out.println(cosineSimilarity(vec1, vec2));
     }
 }

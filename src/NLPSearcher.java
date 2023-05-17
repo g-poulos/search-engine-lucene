@@ -19,6 +19,7 @@ import java.util.*;
 
 public class NLPSearcher {
     private FSDirectory nlpIndex;
+    private List<Suggestion> suggestions;
 
     public NLPSearcher(FSDirectory nlpIndex) {
         this.nlpIndex = nlpIndex;
@@ -77,25 +78,31 @@ public class NLPSearcher {
         System.out.println(inputQueryVec.get(0).get("word"));
         System.out.println(inputQueryVec.get(0).get("vec"));
 
-        ArrayList<Document> simiralWords = vectorize(inputQuery, 100);
-        ArrayList<Suggestion> suggestions = new ArrayList<>();
+        List<Document> similarWords = vectorize(inputQuery, 1000);
+        ArrayList<Suggestion> cosineSimilarities = new ArrayList<>();
         double cs;
-        for (Document d: simiralWords) {
+        for (Document d: similarWords) {
             if (uniqueWords.contains(d.get("word")) && !d.get("word").equals(inputQuery)) {
                  cs = cosineSimilarity(toDoubleVector(inputQueryVec.get(0).get("vec")),
                                 toDoubleVector(d.get("vec")));
-                suggestions.add(new Suggestion(d.get("word"), cs));
+                cosineSimilarities.add(new Suggestion(d.get("word"), cs));
+
             }
         }
+
+        Set<Suggestion> uniqueSet = new HashSet<>(cosineSimilarities);
+        suggestions = new ArrayList<>(uniqueSet);
         Collections.sort(suggestions, Comparator.comparing(s -> s.getSimilarity()));
         Collections.reverse(suggestions);
-
-        for (Suggestion s: suggestions) {
-            System.out.println(s);
-        }
-
     }
 
+    public ArrayList<String> getSuggestionWords() {
+        ArrayList<String> words = new ArrayList<>();
+        for (Suggestion s: suggestions) {
+            words.add(s.getWord());
+        }
+        return words;
+    }
 
     public static void main(String[] args) throws IOException, ParseException {
         Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");

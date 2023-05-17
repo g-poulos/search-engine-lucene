@@ -5,6 +5,8 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
@@ -22,9 +24,11 @@ public class MainReader {
     private String lastField;
     private List<List<StringBuilder>> htmlPagesCopy;
     private FSDirectory index;
+    private Set<String> uniqueWords;
 
     public MainReader(FSDirectory index) {
         this.index = index;
+        createUniqueWords();
     }
 
     public int runQuery(String queryStr, String field) throws IOException, ParseException, InvalidTokenOffsetsException {
@@ -132,6 +136,27 @@ public class MainReader {
 
     public void toUnsortedDocuments() {
         htmlPages = htmlPagesCopy;
+    }
+
+    private void createUniqueWords()  {
+        try {
+            IndexReader reader = DirectoryReader.open(index);
+            uniqueWords = new HashSet<>();
+            int numSegments = reader.leaves().size();
+            for (int i = 0; i < numSegments; i++) {
+                Terms terms = reader.leaves().get(i).reader().terms("all");
+
+                TermsEnum termsEnum = terms.iterator();
+                while (termsEnum.next() != null) {
+                    String term = termsEnum.term().utf8ToString();
+                    uniqueWords.add(term);
+                }
+
+            }
+            System.out.println("Unique Words Created with " + uniqueWords.size() + " terms");
+        } catch (IOException e) {
+            System.out.println("ERROR: Unique Words creation failed. Unable to open index");
+        }
     }
 
     public ArrayList<Document> getFoundDocuments() {

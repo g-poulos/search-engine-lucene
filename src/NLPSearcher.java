@@ -19,7 +19,7 @@ import java.util.*;
 
 public class NLPSearcher {
     private FSDirectory nlpIndex;
-    private List<Suggestion> suggestions;
+    private List<Suggestion> suggestions = new ArrayList<>();
 
     public NLPSearcher(FSDirectory nlpIndex) {
         this.nlpIndex = nlpIndex;
@@ -109,8 +109,6 @@ public class NLPSearcher {
         FSDirectory index = FSDirectory.open(path);
 
         NLPSearcher s = new NLPSearcher(index);
-//        double[] vec1 = toDoubleVector(s.vectorize("man"));
-//        double[] vec2 = toDoubleVector(s.vectorize("loving~3"));
-//        System.out.println(cosineSimilarity(vec1, vec2));
+
     }
 }

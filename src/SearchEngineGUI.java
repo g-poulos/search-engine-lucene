@@ -2,6 +2,7 @@ package src;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -32,6 +33,8 @@ public class SearchEngineGUI extends Application {
     private WebView webView = new WebView();
     private Label pageNum = new Label();
     private static MainReader reader;
+    private static NLPSearcher nlpSearcher;
+    private ListView<String> similarWords = new ListView<>();
 
     @Override
     public void start(Stage stage) {
@@ -50,11 +53,22 @@ public class SearchEngineGUI extends Application {
         lbl.setFont(Font.font("Serif", FontWeight.BOLD, 30));
 
         HBox radioButtons = getRadioButtonOptions();
-        HBox suggestionSection = getSuggestionSection(reader);
+        HBox suggestionSection = getSuggestionSection();
+
+        similarWords.setOnMouseClicked(event -> {
+            String selectedSuggestion = similarWords.getSelectionModel().getSelectedItem();
+            if (selectedSuggestion != null) {
+                searchInput.setText(selectedSuggestion);
+                similarWords.getItems().clear();
+                this.search_query();
+            }
+        });
+
         HBox searchOptions = getSearchOptions();
 
         HBox searchRow = getSearchRow();
 
+        webView.setPrefHeight(400);
         root.getChildren().addAll(lbl, searchRow, suggestionSection, radioButtons, searchOptions, webView);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
@@ -114,10 +128,11 @@ public class SearchEngineGUI extends Application {
         return buttons;
     }
 
-    private HBox getSuggestionSection(MainReader reader) {
-        ListView<String> suggestionsListView = getSuggestionsListView(reader, searchInput);
-        suggestionsListView.setPrefSize(420, 100);
-        webView.setPrefHeight(400);
+    private HBox getSuggestionSection() {
+        ListView<String> suggestionsListView = getSuggestionsListView(suggestions);
+        suggestionsListView.setPrefSize(100, 100);
+
+//        similarWords.setItems((ObservableList<String>) nlpSearcher.getSuggestionWords());
 
         Button clearSuggestions = new Button();
         clearSuggestions.setText("Clear");
@@ -127,16 +142,16 @@ public class SearchEngineGUI extends Application {
             suggestions.clear();
         };
         clearSuggestions.setOnAction(clear);
-        HBox suggestionSection = new HBox(suggestionsListView, clearSuggestions);
+        HBox suggestionSection = new HBox(similarWords, suggestionsListView, clearSuggestions);
         suggestionSection.setAlignment(Pos.CENTER);
         suggestionSection.setPrefSize(500, 200);
         return suggestionSection;
     }
 
-    private ListView<String> getSuggestionsListView(MainReader reader, TextField searchField) {
+    private ListView<String> getSuggestionsListView(List<String> suggestions) {
         ListView<String> suggestionsListView = new ListView<>();
 
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+        searchInput.textProperty().addListener((observable, oldValue, newValue) -> {
             List<String> filteredSuggestions = new ArrayList<>();
             for (String suggestion : suggestions) {
                 if (suggestion.toLowerCase().startsWith(newValue.toLowerCase())) {
@@ -149,7 +164,7 @@ public class SearchEngineGUI extends Application {
         suggestionsListView.setOnMouseClicked(event -> {
             String selectedSuggestion = suggestionsListView.getSelectionModel().getSelectedItem();
             if (selectedSuggestion != null) {
-                searchField.setText(selectedSuggestion);
+                searchInput.setText(selectedSuggestion);
                 suggestionsListView.getItems().clear();
                 this.search_query();
 
@@ -195,6 +210,14 @@ public class SearchEngineGUI extends Application {
             int hits = reader.runQuery(searchInput.getText(), this.searchField);
             if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
+                nlpSearcher.searchSuggestions(searchInput.getText(), reader.getUniqueWords());
+                ObservableList<String> items = FXCollections.observableArrayList(nlpSearcher.getSuggestionWords());
+                similarWords.setItems(items);
+
+                for (String s: nlpSearcher.getSuggestionWords()) {
+                    System.out.println(s);
+                }
+
             } else {
                 webView.getEngine().loadContent("No Results");
             }
@@ -254,9 +277,14 @@ public class SearchEngineGUI extends Application {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Paths.get(System.getProperty("user.dir") + "/index");
-        FSDirectory index = FSDirectory.open(path);
-        reader = new MainReader(index);
+        Path songIndexpath = Paths.get(System.getProperty("user.dir") + "/index");
+        Path nlpIndexpath = Paths.get(System.getProperty("user.dir") + "/emb_index");
+        FSDirectory songIndex = FSDirectory.open(songIndexpath);
+        FSDirectory nlpIndex = FSDirectory.open(nlpIndexpath);
+
+        reader = new MainReader(songIndex);
+        nlpSearcher = new NLPSearcher(nlpIndex);
+
         launch(args);
     }
 }

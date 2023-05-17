@@ -14,7 +14,7 @@ searches as the user types and sorting alphabetically the results after the sear
 
 key-word queries : to find an exact match for a specific word (ex. holy)
 boolean queries : search matching words with logical operators AND, OR, NOT (ex1. love AND cry, ex2. love NOT cry)
-wildcard queries : search matching words with special characters +,-,?,~,*  (ex1. lo?e, ex2. cry~.2, ex3. +love -cry)
+wildcard queries : search matching words with special characters +,-,~,*,? (ex1. lo?e, ex2. cry~.2, ex3. +love -cry)
 field queries : search in seperate fields like artist, song and lyrics or in all of them with all
 
 ## How to Run

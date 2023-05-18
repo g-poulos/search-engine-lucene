@@ -6,16 +6,21 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.FSDirectory;
 import java.io.IOException;
 import java.util.*;
 
+
 public class NLPSearcher {
-    private FSDirectory nlpIndex;
+    private static double SIMILARITY_THRESHOLD = 0.5;
+    private static int SIMILAR_WORD_COUNT = 7;
+
+    private ByteBuffersDirectory nlpIndex;
     private List<String> suggestions;
     private Set<String> uniqueWords;
 
-    public NLPSearcher(FSDirectory nlpIndex) {
+    public NLPSearcher(ByteBuffersDirectory nlpIndex) {
         this.nlpIndex = nlpIndex;
 
         try {
@@ -84,9 +89,9 @@ public class NLPSearcher {
             wordVec = vectorize(word);
 
             double cs = cosineSimilarity(toDoubleVector(inputQueryVec.get("vec")), toDoubleVector(wordVec.get("vec")));
-            if (cs > 0.5) {
+            if (cs > SIMILARITY_THRESHOLD) {
                 suggestions.add(word);
-                if (suggestions.size() == 3)
+                if (suggestions.size() == SIMILAR_WORD_COUNT)
                     break;
             }
         }

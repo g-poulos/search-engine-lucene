@@ -17,6 +17,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.FSDirectory;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -121,6 +122,22 @@ public class SearchEngineGUI extends Application {
     }
 
     private HBox getSuggestionSection() {
+        Button findSimilar = new Button();
+        findSimilar.setText("Find\nSimilar");
+        findSimilar.setPrefSize(70, 100);
+        EventHandler<ActionEvent> findSimilarWords = e -> {
+            try {
+                nlpSearcher.searchSuggestions(searchInput.getText());
+            } catch (ParseException ex) {
+                ex.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            ObservableList<String> items = FXCollections.observableArrayList(nlpSearcher.getSuggestionWords());
+            similarWords.setItems(items);
+        };
+        findSimilar.setOnAction(findSimilarWords);
+
         similarWords.setOnMouseClicked(event -> {
             String selectedSuggestion = similarWords.getSelectionModel().getSelectedItem();
             if (selectedSuggestion != null) {
@@ -135,19 +152,18 @@ public class SearchEngineGUI extends Application {
 
         Button clearSuggestions = new Button();
         clearSuggestions.setText("Clear");
-        clearSuggestions.setPrefSize(50, 100);
+        clearSuggestions.setPrefSize(70, 100);
         EventHandler<ActionEvent> clear = e -> {
             suggestionsListView.getItems().clear();
             suggestions.clear();
         };
 
         clearSuggestions.setOnAction(clear);
-        HBox suggestionSection = new HBox(similarWords, suggestionsListView, clearSuggestions);
+        HBox suggestionSection = new HBox(findSimilar, similarWords, suggestionsListView, clearSuggestions);
         suggestionSection.setAlignment(Pos.CENTER);
         suggestionSection.setSpacing(2);
-//        suggestionSection.setPrefSize(300, 200);
-        suggestionSection.setMinSize(500,100);
-        suggestionSection.setMaxSize(500, 100);
+        suggestionSection.setMinSize(800,100);
+        suggestionSection.setMaxSize(800, 100);
         return suggestionSection;
     }
 
@@ -214,9 +230,7 @@ public class SearchEngineGUI extends Application {
             if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
 
-                nlpSearcher.searchSuggestions(searchInput.getText());
-                ObservableList<String> items = FXCollections.observableArrayList(nlpSearcher.getSuggestionWords());
-                similarWords.setItems(items);
+
 
             } else {
                 webView.getEngine().loadContent("No Results");
@@ -282,9 +296,7 @@ public class SearchEngineGUI extends Application {
         reader = new MainReader(songIndex);
 
         NLPIndexCreator nlpCreator = new NLPIndexCreator(reader.getUniqueWords());
-        nlpCreator.createIndex();
-        Path nlpIndexpath = Paths.get(System.getProperty("user.dir") + "/emb_index");
-        FSDirectory nlpIndex = FSDirectory.open(nlpIndexpath);
+        ByteBuffersDirectory nlpIndex = nlpCreator.createIndex();
         nlpSearcher = new NLPSearcher(nlpIndex);
 
         launch(args);

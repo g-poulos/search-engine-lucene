@@ -1,6 +1,5 @@
 package src;
 
-
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -9,7 +8,7 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -28,9 +27,8 @@ public class NLPIndexCreator {
         this.dataSetWords = dataSetWords;
     }
 
-    public void createIndex() throws IOException {
-        Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");
-        FSDirectory index = FSDirectory.open(path);
+    public ByteBuffersDirectory createIndex() throws IOException {
+        ByteBuffersDirectory index = new ByteBuffersDirectory();
         WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
         IndexWriter w = new IndexWriter(index, config);
@@ -46,6 +44,7 @@ public class NLPIndexCreator {
             e.printStackTrace();
         }
         w.close();
+        return index;
     }
 
     private void addDoc(IndexWriter w, String line) throws IOException {
@@ -59,8 +58,4 @@ public class NLPIndexCreator {
             w.addDocument(doc);
         }
     }
-
-//    public static void main(String[] args) throws IOException {
-//        createIndex();
-//    }
 }

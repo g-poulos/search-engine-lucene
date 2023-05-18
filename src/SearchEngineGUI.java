@@ -47,7 +47,7 @@ public class SearchEngineGUI extends Application {
         root.setSpacing(10);
         root.setPadding(new Insets(30));
         root.setAlignment(Pos.CENTER);
-        var scene = new Scene(root, 800, 600);
+        var scene = new Scene(root, 1000, 800);
 
         var lbl = new Label("Lucene Search Engine\n");
         lbl.setAlignment(Pos.CENTER);
@@ -60,7 +60,7 @@ public class SearchEngineGUI extends Application {
         HBox searchOptions = getSearchOptions();
         HBox searchRow = getSearchRow();
 
-        webView.setPrefHeight(400);
+        webView.setPrefHeight(700);
         root.getChildren().addAll(lbl, searchRow, suggestionSection, radioButtons, searchOptions, webView);
         stage.setTitle("Lucene Search Engine");
         stage.setScene(scene);
@@ -145,7 +145,9 @@ public class SearchEngineGUI extends Application {
         HBox suggestionSection = new HBox(similarWords, suggestionsListView, clearSuggestions);
         suggestionSection.setAlignment(Pos.CENTER);
         suggestionSection.setSpacing(2);
-        suggestionSection.setPrefSize(500, 200);
+//        suggestionSection.setPrefSize(300, 200);
+        suggestionSection.setMinSize(500,100);
+        suggestionSection.setMaxSize(500, 100);
         return suggestionSection;
     }
 

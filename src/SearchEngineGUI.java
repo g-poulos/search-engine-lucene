@@ -214,7 +214,7 @@ public class SearchEngineGUI extends Application {
             if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
 
-                nlpSearcher.searchSuggestions(searchInput.getText(), reader.getUniqueWords());
+                nlpSearcher.searchSuggestions(searchInput.getText());
                 ObservableList<String> items = FXCollections.observableArrayList(nlpSearcher.getSuggestionWords());
                 similarWords.setItems(items);
 
@@ -278,11 +278,13 @@ public class SearchEngineGUI extends Application {
 
     public static void main(String[] args) throws IOException {
         Path songIndexpath = Paths.get(System.getProperty("user.dir") + "/index");
-        Path nlpIndexpath = Paths.get(System.getProperty("user.dir") + "/emb_index");
         FSDirectory songIndex = FSDirectory.open(songIndexpath);
-        FSDirectory nlpIndex = FSDirectory.open(nlpIndexpath);
-
         reader = new MainReader(songIndex);
+
+        NLPIndexCreator nlpCreator = new NLPIndexCreator(reader.getUniqueWords());
+        nlpCreator.createIndex();
+        Path nlpIndexpath = Paths.get(System.getProperty("user.dir") + "/emb_index");
+        FSDirectory nlpIndex = FSDirectory.open(nlpIndexpath);
         nlpSearcher = new NLPSearcher(nlpIndex);
 
         launch(args);

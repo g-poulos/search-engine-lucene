@@ -15,10 +15,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class NLPIndexCreator {
 
-    private static void createIndex() throws IOException {
+    private Set<String> dataSetWords;
+
+    public NLPIndexCreator(Set<String> dataSetWords) {
+        this.dataSetWords = dataSetWords;
+    }
+
+    public void createIndex() throws IOException {
         Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");
         FSDirectory index = FSDirectory.open(path);
         WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
@@ -38,18 +48,19 @@ public class NLPIndexCreator {
         w.close();
     }
 
-    private static void addDoc(IndexWriter w, String line) throws IOException {
+    private void addDoc(IndexWriter w, String line) throws IOException {
         Document doc = new Document();
         String[] parts = line.split(" ", 2);
         String word = parts[0];
         String vec = parts[1];
-
-        doc.add(new TextField("word", word, Field.Store.YES));
-        doc.add(new StoredField("vec", vec));
-        w.addDocument(doc);
+        if (dataSetWords.contains(word)) {
+            doc.add(new TextField("word", word, Field.Store.YES));
+            doc.add(new StoredField("vec", vec));
+            w.addDocument(doc);
+        }
     }
 
-    public static void main(String[] args) throws IOException {
-        createIndex();
-    }
+//    public static void main(String[] args) throws IOException {
+//        createIndex();
+//    }
 }

@@ -25,21 +25,34 @@ public class NLPSearcher {
         this.nlpIndex = nlpIndex;
     }
 
-    public static double cosineSimilarity(double[] vector1, double[] vector2) {
-        double dotProduct = 0.0;
-        double norm1 = 0.0;
-        double norm2 = 0.0;
-
-        for (int i = 0; i < vector1.length; i++) {
-            dotProduct += vector1[i] * vector2[i];
-            norm1 += Math.pow(vector1[i], 2);
-            norm2 += Math.pow(vector2[i], 2);
+    public void searchSuggestions(String inputQuery, Set<String> uniqueWords) throws ParseException {
+        ArrayList<Document> inputQueryVec = vectorize(inputQuery, 1);
+        if (!inputQueryVec.isEmpty()) {
+            System.out.print("Found suggestions for: " + inputQuery);
+        } else {
+            System.out.print("Cannot find suggestions for: " + inputQuery);
+            return;
         }
 
-        return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+        List<Document> similarWords = vectorize(inputQuery, 100);
+        ArrayList<Suggestion> cosineSimilarities = new ArrayList<>();
+        double cs;
+        for (Document d: similarWords) {
+            if (uniqueWords.contains(d.get("word")) && !d.get("word").equals(inputQuery)) {
+                cs = cosineSimilarity(toDoubleVector(inputQueryVec.get(0).get("vec")),
+                        toDoubleVector(d.get("vec")));
+                cosineSimilarities.add(new Suggestion(d.get("word"), cs));
+
+            }
+        }
+
+        Set<Suggestion> uniqueSet = new HashSet<>(cosineSimilarities);
+        suggestions = new ArrayList<>(uniqueSet);
+        Collections.sort(suggestions, Comparator.comparing(s -> s.getSimilarity()));
+        Collections.reverse(suggestions);
     }
 
-    public ArrayList<Document> vectorize(String queryStr, int numOfHits) throws ParseException {
+    private ArrayList<Document> vectorize(String queryStr, int numOfHits) throws ParseException {
         ArrayList<Document> similarWords = new ArrayList<>();
         FuzzyQuery fuzzyQuery = new FuzzyQuery(new Term("word", queryStr));
 
@@ -63,7 +76,21 @@ public class NLPSearcher {
         return similarWords;
     }
 
-    public static double[] toDoubleVector(String vec) {
+    private static double cosineSimilarity(double[] vector1, double[] vector2) {
+        double dotProduct = 0.0;
+        double norm1 = 0.0;
+        double norm2 = 0.0;
+
+        for (int i = 0; i < vector1.length; i++) {
+            dotProduct += vector1[i] * vector2[i];
+            norm1 += Math.pow(vector1[i], 2);
+            norm2 += Math.pow(vector2[i], 2);
+        }
+
+        return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+    }
+
+    private static double[] toDoubleVector(String vec) {
         String[] strVec = vec.split(" ");
         double[] doubleVec = new double[strVec.length];
 
@@ -73,46 +100,11 @@ public class NLPSearcher {
         return doubleVec;
     }
 
-    public void searchSuggestions(String inputQuery, Set<String> uniqueWords) throws ParseException {
-        ArrayList<Document> inputQueryVec = vectorize(inputQuery, 1);
-        if (!inputQueryVec.isEmpty()) {
-            System.out.print("Found suggestions for: " + inputQuery);
-        } else {
-            System.out.print("Cannot find suggestions for: " + inputQuery);
-            return;
-        }
-
-        List<Document> similarWords = vectorize(inputQuery, 100);
-        ArrayList<Suggestion> cosineSimilarities = new ArrayList<>();
-        double cs;
-        for (Document d: similarWords) {
-            if (uniqueWords.contains(d.get("word")) && !d.get("word").equals(inputQuery)) {
-                 cs = cosineSimilarity(toDoubleVector(inputQueryVec.get(0).get("vec")),
-                                toDoubleVector(d.get("vec")));
-                cosineSimilarities.add(new Suggestion(d.get("word"), cs));
-
-            }
-        }
-
-        Set<Suggestion> uniqueSet = new HashSet<>(cosineSimilarities);
-        suggestions = new ArrayList<>(uniqueSet);
-        Collections.sort(suggestions, Comparator.comparing(s -> s.getSimilarity()));
-        Collections.reverse(suggestions);
-    }
-
     public ArrayList<String> getSuggestionWords() {
         ArrayList<String> words = new ArrayList<>();
         for (Suggestion s: suggestions) {
             words.add(s.getWord());
         }
         return words;
-    }
-
-    public static void main(String[] args) throws IOException, ParseException {
-        Path path = Paths.get(System.getProperty("user.dir") + "/emb_index");
-        FSDirectory index = FSDirectory.open(path);
-
-        NLPSearcher s = new NLPSearcher(index);
-
     }
 }

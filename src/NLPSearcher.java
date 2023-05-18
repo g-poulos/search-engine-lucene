@@ -22,7 +22,10 @@ public class NLPSearcher {
 
     public NLPSearcher(ByteBuffersDirectory nlpIndex) {
         this.nlpIndex = nlpIndex;
+        createUniqueWords(nlpIndex);
+    }
 
+    private void createUniqueWords(ByteBuffersDirectory nlpIndex) {
         try {
             IndexReader reader = DirectoryReader.open(nlpIndex);
             uniqueWords = new HashSet<>();
@@ -42,6 +45,23 @@ public class NLPSearcher {
         }
     }
 
+    public void searchSuggestions(String input) throws ParseException, IOException {
+        Document inputQueryVec = vectorize(input);
+        Document wordVec;
+        suggestions = new ArrayList<>();
+
+        for (String word: uniqueWords) {
+            wordVec = vectorize(word);
+
+            double cs = cosineSimilarity(toDoubleVector(inputQueryVec.get("vec")), toDoubleVector(wordVec.get("vec")));
+            if (cs > SIMILARITY_THRESHOLD) {
+                suggestions.add(word);
+                System.out.println();
+                if (suggestions.size() == SIMILAR_WORD_COUNT)
+                    break;
+            }
+        }
+    }
 
     private Document vectorize(String queryStr) throws ParseException, IOException {
         StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -78,23 +98,6 @@ public class NLPSearcher {
             doubleVec[i] = Double.parseDouble(strVec[i]);
         }
         return doubleVec;
-    }
-
-    public void searchSuggestions(String input) throws ParseException, IOException {
-        Document inputQueryVec = vectorize(input);
-        Document wordVec;
-        suggestions = new ArrayList<>();
-
-        for (String word: uniqueWords) {
-            wordVec = vectorize(word);
-
-            double cs = cosineSimilarity(toDoubleVector(inputQueryVec.get("vec")), toDoubleVector(wordVec.get("vec")));
-            if (cs > SIMILARITY_THRESHOLD) {
-                suggestions.add(word);
-                if (suggestions.size() == SIMILAR_WORD_COUNT)
-                    break;
-            }
-        }
     }
 
     public List<String> getSuggestionWords() {

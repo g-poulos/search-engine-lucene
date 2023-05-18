@@ -146,6 +146,7 @@ public class SearchEngineGUI extends Application {
                 this.search_query();
             }
         });
+        similarWords.setPrefSize(200, 100);
 
         ListView<String> suggestionsListView = getSuggestionsListView(suggestions);
         suggestionsListView.setPrefSize(200, 100);

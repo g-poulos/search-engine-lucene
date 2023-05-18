@@ -26,15 +26,16 @@ import java.util.List;
 
 
 public class SearchEngineGUI extends Application {
-    private int pageNumber = 0;
-    private List<String> suggestions = new ArrayList<>();
     private String searchField = "all";
     private TextField searchInput = new TextField();
+    private int pageNumber = 0;
+    private Label pageLabel = new Label();
+    private List<String> suggestions = new ArrayList<>();
+    private ListView<String> similarWords = new ListView<>();
     private WebView webView = new WebView();
-    private Label pageNum = new Label();
     private static MainReader reader;
     private static NLPSearcher nlpSearcher;
-    private ListView<String> similarWords = new ListView<>();
+
 
     @Override
     public void start(Stage stage) {
@@ -55,17 +56,8 @@ public class SearchEngineGUI extends Application {
         HBox radioButtons = getRadioButtonOptions();
         HBox suggestionSection = getSuggestionSection();
 
-        similarWords.setOnMouseClicked(event -> {
-            String selectedSuggestion = similarWords.getSelectionModel().getSelectedItem();
-            if (selectedSuggestion != null) {
-                searchInput.setText(selectedSuggestion);
-                similarWords.getItems().clear();
-                this.search_query();
-            }
-        });
 
         HBox searchOptions = getSearchOptions();
-
         HBox searchRow = getSearchRow();
 
         webView.setPrefHeight(400);
@@ -100,8 +92,8 @@ public class SearchEngineGUI extends Application {
         Button nextButton = new Button();
         nextButton.setText("Next");
 
-        var buttons = new HBox(sortBy, comboBox, pageNum, prevButton, nextButton);
-        HBox.setMargin(pageNum, new Insets(0, 30, 0, 0));
+        var buttons = new HBox(sortBy, comboBox, pageLabel, prevButton, nextButton);
+        HBox.setMargin(pageLabel, new Insets(0, 30, 0, 0));
         buttons.setSpacing(10);
         buttons.setAlignment(Pos.CENTER_LEFT);
 
@@ -129,10 +121,17 @@ public class SearchEngineGUI extends Application {
     }
 
     private HBox getSuggestionSection() {
-        ListView<String> suggestionsListView = getSuggestionsListView(suggestions);
-        suggestionsListView.setPrefSize(100, 100);
+        similarWords.setOnMouseClicked(event -> {
+            String selectedSuggestion = similarWords.getSelectionModel().getSelectedItem();
+            if (selectedSuggestion != null) {
+                searchInput.setText(selectedSuggestion);
+                similarWords.getItems().clear();
+                this.search_query();
+            }
+        });
 
-//        similarWords.setItems((ObservableList<String>) nlpSearcher.getSuggestionWords());
+        ListView<String> suggestionsListView = getSuggestionsListView(suggestions);
+        suggestionsListView.setPrefSize(200, 100);
 
         Button clearSuggestions = new Button();
         clearSuggestions.setText("Clear");
@@ -141,9 +140,11 @@ public class SearchEngineGUI extends Application {
             suggestionsListView.getItems().clear();
             suggestions.clear();
         };
+
         clearSuggestions.setOnAction(clear);
         HBox suggestionSection = new HBox(similarWords, suggestionsListView, clearSuggestions);
         suggestionSection.setAlignment(Pos.CENTER);
+        suggestionSection.setSpacing(2);
         suggestionSection.setPrefSize(500, 200);
         return suggestionSection;
     }
@@ -210,13 +211,10 @@ public class SearchEngineGUI extends Application {
             int hits = reader.runQuery(searchInput.getText(), this.searchField);
             if (hits > 0) {
                 this.showPage(reader.getHtmlPages().get(pageNumber));
+
                 nlpSearcher.searchSuggestions(searchInput.getText(), reader.getUniqueWords());
                 ObservableList<String> items = FXCollections.observableArrayList(nlpSearcher.getSuggestionWords());
                 similarWords.setItems(items);
-
-                for (String s: nlpSearcher.getSuggestionWords()) {
-                    System.out.println(s);
-                }
 
             } else {
                 webView.getEngine().loadContent("No Results");
@@ -273,7 +271,7 @@ public class SearchEngineGUI extends Application {
     }
 
     private void updatePageNum() {
-        pageNum.setText("Page: " + (pageNumber + 1) + " out of " + reader.getHtmlPages().size());
+        pageLabel.setText("Page: " + (pageNumber + 1) + " out of " + reader.getHtmlPages().size());
     }
 
     public static void main(String[] args) throws IOException {

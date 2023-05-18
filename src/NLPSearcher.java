@@ -75,10 +75,14 @@ public class NLPSearcher {
 
     public void searchSuggestions(String inputQuery, Set<String> uniqueWords) throws ParseException {
         ArrayList<Document> inputQueryVec = vectorize(inputQuery, 1);
-        System.out.println(inputQueryVec.get(0).get("word"));
-        System.out.println(inputQueryVec.get(0).get("vec"));
+        if (!inputQueryVec.isEmpty()) {
+            System.out.print("Found suggestions for: " + inputQuery);
+        } else {
+            System.out.print("Cannot find suggestions for: " + inputQuery);
+            return;
+        }
 
-        List<Document> similarWords = vectorize(inputQuery, 1000);
+        List<Document> similarWords = vectorize(inputQuery, 100);
         ArrayList<Suggestion> cosineSimilarities = new ArrayList<>();
         double cs;
         for (Document d: similarWords) {

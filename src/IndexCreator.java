@@ -86,7 +86,7 @@ public class IndexCreator {
     public static void main(String[] args) throws IOException {
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
-        ArrayList<String[]> textList = readData("spotify_millsongdata_cl.csv");
+        ArrayList<String[]> textList = readData("data/spotify_millsongdata_cl.csv");
         createIndex(textList, analyzer);
 
     }

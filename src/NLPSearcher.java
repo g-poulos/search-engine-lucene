@@ -56,7 +56,6 @@ public class NLPSearcher {
             double cs = cosineSimilarity(toDoubleVector(inputQueryVec.get("vec")), toDoubleVector(wordVec.get("vec")));
             if (cs > SIMILARITY_THRESHOLD) {
                 suggestions.add(word);
-                System.out.println();
                 if (suggestions.size() == SIMILAR_WORD_COUNT)
                     break;
             }

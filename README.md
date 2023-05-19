@@ -35,7 +35,7 @@ the clear button clears the history.
 
 + The pre-trained model can be found on: https://fasttext.cc/docs/en/english-vectors.html
 
-![](assets\pre-trained-model.png)
+![](assets/pre-trained-model.png)
 
 ### Step 2
 

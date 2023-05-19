@@ -15,6 +15,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import org.apache.lucene.luke.models.documents.TermPosting;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.store.ByteBuffersDirectory;
@@ -292,11 +293,14 @@ public class SearchEngineGUI extends Application {
     }
 
     public static void main(String[] args) throws IOException {
-        Path songIndexpath = Paths.get(System.getProperty("user.dir") + "/index");
+        String indexPath = args[0];
+        String embPath = args[1];
+
+        Path songIndexpath = Paths.get(indexPath);
         FSDirectory songIndex = FSDirectory.open(songIndexpath);
         reader = new MainReader(songIndex);
 
-        NLPIndexCreator nlpCreator = new NLPIndexCreator(reader.getUniqueWords());
+        NLPIndexCreator nlpCreator = new NLPIndexCreator(reader.getUniqueWords(), embPath);
         ByteBuffersDirectory nlpIndex = nlpCreator.createIndex();
         nlpSearcher = new NLPSearcher(nlpIndex);
 

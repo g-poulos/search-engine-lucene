@@ -1,5 +1,6 @@
 # Lucene Search Engine 
 
+![img.png](assets/lucene_search_engine.png)
 ## Description
 
 Lucene Search Engine is an application based on Java's open-source search software Lucene, which provides
